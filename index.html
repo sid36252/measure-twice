@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The build log behind Root Cause: every rebuild of a Test cricket WAR model, in order.">
+<title>Measure Twice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #eef0e4;
+    --paper-raised: #f6f7ee;
+    --ink: #1c2b1f;
+    --ink-soft: #445243;
+    --ink-faint: #7a8577;
+    --gold: #9c7419;
+    --gold-strong: #7d5c12;
+    --pitch: #2f5233;
+    --pitch-soft: #e2e8dc;
+    --leather: #8b3a2f;
+    --leather-soft: #f3e4e1;
+    --line: rgba(28, 43, 31, 0.16);
+    --line-strong: rgba(28, 43, 31, 0.32);
+    --shadow: rgba(28, 43, 31, 0.1);
+
+    /* chart marks -- validated: light-mode pair passes lightness/chroma/CVD/contrast checks */
+    --chart-bat: #a8721f;
+    --chart-bowl: #2158a3;
+    --chart-grid: rgba(28, 43, 31, 0.14);
+    --chart-axis: rgba(28, 43, 31, 0.5);
+
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #131d16;
+      --paper-raised: #192417;
+      --ink: #e9e6d8;
+      --ink-soft: #b9c2b0;
+      --ink-faint: #7e8a78;
+      --gold: #d9ac3f;
+      --gold-strong: #eec564;
+      --pitch: #6a9c74;
+      --pitch-soft: #1e3322;
+      --leather: #d3806f;
+      --leather-soft: #3a211e;
+      --line: rgba(233, 230, 216, 0.14);
+      --line-strong: rgba(233, 230, 216, 0.28);
+      --shadow: rgba(0, 0, 0, 0.35);
+      --chart-bat: #b8862c;
+      --chart-bowl: #4a89cf;
+      --chart-grid: rgba(233, 230, 216, 0.12);
+      --chart-axis: rgba(233, 230, 216, 0.45);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #131d16;
+    --paper-raised: #192417;
+    --ink: #e9e6d8;
+    --ink-soft: #b9c2b0;
+    --ink-faint: #7e8a78;
+    --gold: #d9ac3f;
+    --gold-strong: #eec564;
+    --pitch: #6a9c74;
+    --pitch-soft: #1e3322;
+    --leather: #d3806f;
+    --leather-soft: #3a211e;
+    --line: rgba(233, 230, 216, 0.14);
+    --line-strong: rgba(233, 230, 216, 0.28);
+    --shadow: rgba(0, 0, 0, 0.35);
+    --chart-bat: #b8862c;
+    --chart-bowl: #4a89cf;
+    --chart-grid: rgba(233, 230, 216, 0.12);
+    --chart-axis: rgba(233, 230, 216, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 6rem;
+  }
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding-bottom: 2.4rem;
+    margin-bottom: 2.6rem;
+    border-bottom: 3px double var(--line-strong);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-strong);
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+  }
+  .eyebrow::before {
+    content: "";
+    display: inline-block;
+    width: 1.6em;
+    height: 2px;
+    background: var(--gold-strong);
+  }
+
+  h1.title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.2rem, 5.2vw, 3.1rem);
+    line-height: 1.06;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .tagline {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.05rem;
+    color: var(--gold-strong);
+    margin: 0.2rem 0 0;
+  }
+
+  .deck {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 1.2rem;
+    color: var(--ink-soft);
+    max-width: 34em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .byline {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    display: flex;
+    gap: 1.2em;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+  }
+  .byline b { color: var(--ink-soft); font-weight: 600; }
+
+  article h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.7rem;
+    color: var(--ink);
+    margin: 3.2rem 0 1rem;
+    text-wrap: balance;
+    letter-spacing: -0.005em;
+  }
+
+  article h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.22rem;
+    color: var(--ink);
+    margin: 2.2rem 0 0.8rem;
+  }
+
+  .section-mark {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--gold-strong);
+    text-transform: uppercase;
+    margin: 0 0 0.35rem;
+  }
+
+  p { margin: 0 0 1.15rem; }
+  article p, article li { max-width: 62ch; }
+
+  a { color: var(--gold-strong); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--leather); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--gold-strong); outline-offset: 2px; }
+
+  strong { font-weight: 600; color: var(--ink); }
+
+  .stat-inline {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--pitch);
+  }
+
+  ul.plain, ol.plain { padding-left: 1.3em; margin: 0 0 1.15rem; }
+  ul.plain li, ol.plain li { margin-bottom: 0.5rem; }
+
+  hr.divider {
+    border: none;
+    height: 1px;
+    background: var(--line);
+    margin: 3rem 0;
+    position: relative;
+  }
+  hr.divider::after {
+    content: "❧";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--paper);
+    padding: 0 0.8em;
+    color: var(--gold);
+    font-size: 1rem;
+  }
+
+  /* callouts */
+  .callout {
+    border-left: 3px solid var(--gold);
+    background: var(--paper-raised);
+    padding: 1.1rem 1.3rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1.6rem 0;
+  }
+  .callout.bug { border-left-color: var(--leather); }
+  .callout.finding { border-left-color: var(--pitch); }
+  .callout-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold-strong);
+    margin-bottom: 0.45rem;
+    display: block;
+  }
+  .callout.bug .callout-label { color: var(--leather); }
+  .callout.finding .callout-label { color: var(--pitch); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* version ledger */
+  .ledger {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 1.8rem 0 2.4rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--paper-raised);
+  }
+  .ledger-row {
+    display: grid;
+    grid-template-columns: 3.4rem 1fr;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .ledger-row:last-child { border-bottom: none; }
+  .ledger-v {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--gold-strong);
+    padding-top: 0.15rem;
+  }
+  .ledger-body h4 {
+    margin: 0 0 0.3rem;
+    font-family: var(--font-display);
+    font-size: 1.03rem;
+    font-weight: 600;
+  }
+  .ledger-body p { margin: 0; font-size: 0.96rem; color: var(--ink-soft); }
+  .ledger-body .verdict {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+  }
+  .verdict.kept { background: var(--pitch-soft); color: var(--pitch); }
+  .verdict.fixed { background: var(--leather-soft); color: var(--leather); }
+  .verdict.shipped { background: var(--pitch-soft); color: var(--pitch); }
+
+  /* tables */
+  .table-wrap { overflow-x: auto; margin: 1.5rem 0 2rem; position: relative; }
+  .table-wrap.has-overflow::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 28px;
+    background: linear-gradient(to right, transparent, var(--paper) 88%);
+    pointer-events: none;
+  }
+  table {
+    width: 100%;
+    min-width: 480px;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  caption {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.6rem;
+  }
+  th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 0.5rem 0.55rem;
+    border-bottom: 2px solid var(--line-strong);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.5rem 0.55rem;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  td.name { font-family: var(--font-body); font-weight: 600; white-space: normal; }
+  td.num, th.num { text-align: right; font-family: var(--font-mono); }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--paper-raised); }
+  td.rank { color: var(--ink-faint); font-family: var(--font-mono); }
+
+  /* pull stat */
+  .pull-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin: 2rem 0;
+    padding: 1.3rem 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .pull-stat .num {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 600;
+    color: var(--gold-strong);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .pull-stat .cap { font-size: 0.96rem; color: var(--ink-soft); max-width: 38ch; }
+
+  /* TL;DR / back-link banner */
+  .tldr {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.3rem 1.5rem;
+    margin: 2rem 0 0;
+  }
+  .tldr-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold-strong);
+    margin: 0 0 0.7rem;
+  }
+  .tldr ul { margin: 0; padding-left: 1.15em; }
+  .tldr li { margin-bottom: 0.45rem; font-size: 0.97rem; }
+  .tldr li:last-child { margin-bottom: 0; }
+  .tldr li::marker { color: var(--gold); }
+  .tldr p { margin: 0; font-size: 0.97rem; }
+
+  /* charts */
+  .chart-block { margin: 1.8rem 0 2.2rem; }
+  .chart-title {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.7rem;
+  }
+  .chart-svg-wrap { overflow-x: auto; }
+  .chart-svg-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart-axis-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    fill: var(--chart-axis);
+  }
+  .chart-value-label {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+  .chart-legend {
+    display: flex;
+    gap: 1.4rem;
+    margin-top: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 0.45em; }
+  .chart-legend .swatch { width: 0.75em; height: 0.75em; border-radius: 2px; display: inline-block; }
+  .chart-note {
+    font-size: 0.86rem;
+    color: var(--ink-faint);
+    margin-top: 0.7rem;
+    font-style: italic;
+  }
+  .chart-tooltip-target { cursor: help; }
+
+  /* heatmap */
+  .heatmap-wrap { overflow-x: auto; }
+  table.heatmap { width: 100%; min-width: 360px; border-collapse: collapse; font-size: 0.92rem; }
+  table.heatmap th {
+    text-align: left;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--ink);
+    padding: 0.45rem 0.7rem;
+    border-bottom: 1px solid var(--line);
+  }
+  table.heatmap thead th {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    border-bottom: 2px solid var(--line-strong);
+  }
+  table.heatmap td {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    padding: 0.45rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+  }
+  table.heatmap tr:last-child th, table.heatmap tr:last-child td { border-bottom: none; }
+
+  /* sortable leaderboard */
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--gold-strong); }
+  th.sortable:focus-visible { outline: 2px solid var(--gold-strong); outline-offset: 2px; }
+  th.sortable .arrow { display: inline-block; margin-left: 0.3em; opacity: 0.45; font-size: 0.85em; }
+  th.sortable.sorted .arrow { opacity: 1; color: var(--gold-strong); }
+  .table-hint {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    margin: -0.8rem 0 0.9rem;
+  }
+
+  footer.colophon {
+    margin-top: 4rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    line-height: 1.8;
+  }
+
+  @media (max-width: 560px) {
+    body { font-size: 16.5px; }
+    .wrap { padding: 2.6rem 1.1rem 4rem; }
+    .ledger-row { grid-template-columns: 1fr; }
+    .pull-stat { flex-direction: column; gap: 0.2rem; }
+  }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Field Notes &middot; Sports Analytics &middot; Companion piece</div>
+    <h1 class="title">Measure Twice</h1>
+    <p class="tagline">The build log behind Root Cause</p>
+    <p class="deck">This is the methodology piece: every rebuild of a Wins Above Replacement model for Test cricket, in order, including the ones that broke, the ones that got quietly abandoned, and the one that flipped the final leaderboard. The findings and the leaderboard themselves live in the companion piece &mdash; <a href="https://sid36252.github.io/root-cause/">Root Cause</a>.</p>
+    <div class="byline">
+      <span><b>Versions</b> 10</span>
+      <span><b>Real bugs found</b> 3</span>
+      <span><b>Ideas tested and rejected</b> 12</span>
+      <span><b>Coverage</b> 2001&ndash;2026</span>
+    </div>
+  </header>
+
+  <div class="tldr">
+    <p>New here? Start with <a href="https://sid36252.github.io/root-cause/"><strong>Root Cause</strong></a> &mdash; the leaderboard, the head-to-head debates, and what the model actually found. Come back here for how it was built.</p>
+  </div>
+
+  <article>
+
+    <p>Ten rebuilds got this Wins Above Replacement model for Test cricket from a first pass at "runs above a replacement player" to where it stands now. Most of the moves were straightforward improvements. Three were real bugs, caught by checking a result that looked wrong until it wasn't wrong any more, and one of those three was big enough to flip who tops the entire leaderboard. Twelve more were plausible-looking ideas that got built, tested against held-out data, and correctly rejected. One more is still genuinely open: three separate attempts at the same real question, each looking promising before failing to hold up under closer checking, with nothing yet to show for it. All of it is below, in order.</p>
+
+    <p class="section-mark">The build, in order</p>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <div class="ledger-v">v1</div>
+        <div class="ledger-body">
+          <h4>Runs above a replacement player</h4>
+          <p>Batting and bowling averages, adjusted for opposition quality and era, compared against a "replacement" baseline built from players with 10 or fewer career Tests: the fringe-of-the-squad pool, not a league-average player.</p>
+          <span class="verdict kept">Foundation &middot; kept</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v2</div>
+        <div class="ledger-body">
+          <h4>A real win-probability model</h4>
+          <p>The "correct" long-term fix: train a model on match state (runs, wickets, overs left) to predict win probability ball by ball, then credit players with the swing they caused. It worked, and then ranked the greatest bowlers of the era at the very bottom of the table.</p>
+          <span class="verdict fixed">Abandoned as a standalone leaderboard &middot; its event-level pricing became essential much later, see v10</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v3</div>
+        <div class="ledger-body">
+          <h4>Leverage, layered on v1</h4>
+          <p>Instead of trusting raw win-probability swings, use the model only to measure <em>stakes</em>: how much a wicket would have mattered at that exact moment. Multiply v1's already-robust numbers by it, and big moments start counting for more.</p>
+          <span class="verdict fixed">Introduced a new bug &middot; fixed in v4</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v4</div>
+        <div class="ledger-body">
+          <h4>Convert to wins once, at the season level</h4>
+          <p>The basketball-style fix: never treat one match's number as a bounded "share of a win." Accumulate value in runs across a whole season, and convert to wins exactly once, at the end.</p>
+          <span class="verdict kept">Structural fix &middot; kept</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v5</div>
+        <div class="ledger-body">
+          <h4>Calibrate batting against bowling</h4>
+          <p>Measured directly: bowling was producing 51% more value per ball of work than batting, even after everything above. Introduced a single rescaling constant, recomputed from the data every run, to force both disciplines onto the same per-ball footing. Held for five iterations &mdash; until v10 found the real cause of the imbalance and made this step unnecessary.</p>
+          <span class="verdict fixed">Superseded by v10, once the real cause was found</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v6</div>
+        <div class="ledger-body">
+          <h4>Country &times; type conditions</h4>
+          <p>First attempt was a home/away flag &mdash; wrong tool, since "away" pools together wildly different conditions. Rebuilt as a factor keyed to the specific hosting country and the bowler's own type (pace or spin), which is what actually explains why the same bowler can look very different in different places.</p>
+          <span class="verdict fixed">First pass wrong, rebuilt &middot; kept</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v7</div>
+        <div class="ledger-body">
+          <h4>Batting position, on top of v6</h4>
+          <p>Reconstructed real batting order from the ball sequence and gave each slot its own replacement bar. First version used 3 buckets and produced a suspicious jump for a keeper-batter; rebuilt with 4, then refined further to all eleven individual slots once the 4-bucket version was checked and found to still be leaving signal on the table.</p>
+          <span class="verdict kept">Kept &middot; batting side of the model</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v8</div>
+        <div class="ledger-body">
+          <h4>Decomposed the bowling pitch factor</h4>
+          <p>A single runs-per-wicket ratio was doing the job of two different signals: how many runs came (stable, since balls bowled is rarely small) and how fast wickets fell (unstable, since wickets can collapse to almost nothing in a rain- or time-truncated match regardless of how the pitch actually played). Split into two independently-shrunk per-ball rates instead. Validated against a held-out prediction check before shipping.</p>
+          <span class="verdict shipped">Kept &middot; bowling side of the model</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v9</div>
+        <div class="ledger-body">
+          <h4>Fixed a weighting mismatch in opposition quality</h4>
+          <p>A bowler's opposition-quality reading was balls-weighted (exposure-weighted, favouring whichever batters actually stayed at the crease longest), but the league baseline it was divided by was dismissal-weighted (pooled runs over pooled outs). Two different yardsticks measuring the same thing. Fixed to match, and a held-out predictive check flipped from opposition quality making predictions <em>worse</em> than ignoring it entirely to making them meaningfully better.</p>
+          <span class="verdict shipped">Kept &middot; the model's baseline going into v10</span>
+        </div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-v">v10</div>
+        <div class="ledger-body">
+          <h4>Priced a wicket at what it's actually worth</h4>
+          <p>The one that flipped the leaderboard. A wicket was being converted into runs using a replacement bowling average, a plausible-sounding proxy that turned out to overprice a wicket by 10&ndash;30%. Replaced with the win-probability model's own measured value (~33 runs, validated by bootstrap on held-out matches), and dropped the v5 calibration step entirely &mdash; it had been masking this exact bug rather than fixing anything. Full story below.</p>
+          <span class="verdict shipped">Kept &middot; the model's current, uncalibrated baseline</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>v1 &mdash; the foundation, and where "replacement level" actually comes from</h3>
+
+    <p>The core unit is Runs Above Replacement (RAR): actual output, minus what a replacement-level player would have produced in the same conditions. "Replacement level" isn't average. It's the batting and bowling of players with 10 Tests or fewer in their whole career, the players cycling through the fringe of a squad. Every performance is also adjusted for the specific bowlers or batters faced (weighted by a rolling, era-adjusted rating of their own quality) and converted to wins using a runs-per-win rate fitted separately for each five-year era, since the draw-rate shift means a given run advantage buys a different amount of winning probability in 2003 than it does in 2023.</p>
+
+    <h3 id="v2">v2 &mdash; the swing and the miss</h3>
+
+    <p>The theoretically "correct" version of this model doesn't use averages at all. It tracks win probability ball by ball (runs, wickets down, balls remaining) the way basketball's most advanced models track win probability possession by possession. I built it, trained it on 1.4 million deliveries, and it beat a naive baseline comfortably.</p>
+
+    <p>Then I built the leaderboard, and every great bowler of the era had fallen to the bottom of the table, while fringe part-time bowlers rose to the top.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">What went wrong</span>
+      <p>71% of all deliveries are dot balls: nothing happens. Their true value is essentially zero, but the model's predictions aren't perfectly smooth, so each dot ball carries a small amount of noise, a standard deviation over 100&times; the size of its true average effect. A frontline bowler faces 20,000&ndash;40,000 of these across a career. That accumulated noise was swamping the real signal from actual wickets and boundaries, where the model was <em>completely correct</em>: a wicket cost the batting side about 5.3 win-probability points on average, and a four gained about 0.66, exactly the right sign and the right order of magnitude. The model wasn't wrong about cricket. It just couldn't be summed ball-by-ball without the noise floor drowning out the signal, or turned into a leaderboard without a real system deploying its best bowler into exactly the moments a wicket was already expected, understating them for succeeding on cue rather than by surprise. Both problems, revisited properly for v10, are why this model was never trusted for individual rankings &mdash; but its event-level averages, summed over the whole dataset rather than attributed to any one player, turned out to be exactly the tool needed to catch the wicket-pricing bug five versions later.</p>
+    </div>
+
+    <h3>v3 &mdash; using it for stakes, not value</h3>
+
+    <p>Rather than discard the win-probability model, I narrowed its job: don't use it to price events, use it to measure <em>leverage</em>, how much a wicket would swing the win probability right now, regardless of whether one actually falls. That's a property of the match state, and match states are far smoother than individual ball outcomes. Multiply v1's already-solid RAR by that leverage, and a century scored under real pressure starts counting for more than the same century in a match already won.</p>
+
+    <p>The first real test case was <strong>Ben Stokes' unbeaten 135 at Headingley in 2019</strong>: England chasing 359, last pair at the crease. Leverage-weighting pushed his match value up, correctly recognising that almost all of it came in the tensest stretch of the match, without the raw win-probability noise problem creeping back in.</p>
+
+    <div class="chart-block">
+      <p class="chart-title">Leverage of a wicket, by wickets already down &mdash; 4th innings</p>
+      <div class="chart-svg-wrap">
+        <svg viewBox="0 0 640 210" role="img" aria-label="Bar chart: leverage rises through the middle order then collapses to zero once 9 or 10 wickets are down">
+          <line x1="60" y1="170" x2="600" y2="170" stroke="var(--chart-grid)" stroke-width="1"/>
+          <line x1="60" y1="97.5" x2="600" y2="97.5" stroke="var(--chart-grid)" stroke-width="1"/>
+          <line x1="60" y1="25" x2="600" y2="25" stroke="var(--chart-grid)" stroke-width="1"/>
+          <text x="52" y="174" text-anchor="end" class="chart-axis-label">0&times;</text>
+          <text x="52" y="101" text-anchor="end" class="chart-axis-label">0.8&times;</text>
+          <text x="52" y="29" text-anchor="end" class="chart-axis-label">1.6&times;</text>
+
+          <g class="chart-tooltip-target"><rect x="56" y="82.5" width="28" height="87.5" rx="3" fill="var(--gold-strong)"/><title>0 down: 0.93&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="105" y="95.6" width="28" height="74.4" rx="3" fill="var(--gold-strong)"/><title>1 down: 0.79&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="154" y="29.9" width="28" height="140.1" rx="3" fill="var(--gold-strong)"/><title>2 down: 1.49&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="203" y="48.6" width="28" height="121.4" rx="3" fill="var(--gold-strong)"/><title>3 down: 1.29&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="252" y="25.3" width="28" height="144.7" rx="3" fill="var(--gold-strong)"/><title>4 down: 1.54&times; average leverage (peak)</title></g>
+          <g class="chart-tooltip-target"><rect x="301" y="63.4" width="28" height="106.6" rx="3" fill="var(--gold-strong)"/><title>5 down: 1.14&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="350" y="64.3" width="28" height="105.7" rx="3" fill="var(--gold-strong)"/><title>6 down: 1.13&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="399" y="106.2" width="28" height="63.8" rx="3" fill="var(--gold-strong)"/><title>7 down: 0.68&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="448" y="145.6" width="28" height="24.4" rx="3" fill="var(--gold-strong)"/><title>8 down: 0.26&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="497" y="169" width="28" height="1" rx="0.5" fill="var(--ink-faint)"/><title>9 down: ~0&times; average leverage</title></g>
+          <g class="chart-tooltip-target"><rect x="546" y="169" width="28" height="1" rx="0.5" fill="var(--ink-faint)"/><title>10 down: ~0&times; average leverage</title></g>
+
+          <text x="266" y="18" text-anchor="middle" class="chart-value-label" fill="var(--gold-strong)">peak: 1.54&times;</text>
+
+          <text x="70" y="188" text-anchor="middle" class="chart-axis-label">0</text>
+          <text x="119" y="188" text-anchor="middle" class="chart-axis-label">1</text>
+          <text x="168" y="188" text-anchor="middle" class="chart-axis-label">2</text>
+          <text x="217" y="188" text-anchor="middle" class="chart-axis-label">3</text>
+          <text x="266" y="188" text-anchor="middle" class="chart-axis-label">4</text>
+          <text x="315" y="188" text-anchor="middle" class="chart-axis-label">5</text>
+          <text x="364" y="188" text-anchor="middle" class="chart-axis-label">6</text>
+          <text x="413" y="188" text-anchor="middle" class="chart-axis-label">7</text>
+          <text x="462" y="188" text-anchor="middle" class="chart-axis-label">8</text>
+          <text x="511" y="188" text-anchor="middle" class="chart-axis-label">9</text>
+          <text x="560" y="188" text-anchor="middle" class="chart-axis-label">10</text>
+          <text x="330" y="205" text-anchor="middle" class="chart-axis-label">wickets down</text>
+        </svg>
+      </div>
+      <p class="chart-note">1.0&times; is the dataset-wide average stakes of a wicket. The climb through the middle order is the "one more wicket breaks it open" tension every fan recognises; the collapse at 9&ndash;10 down is the model correctly noticing the outcome is usually already settled by then. This is the leverage behind the Stokes finding above, and behind Jadeja's leverage figure in <a href="https://sid36252.github.io/root-cause/">Root Cause</a>'s allrounder section.</p>
+    </div>
+
+    <h3>v4 &mdash; the single-match ceiling problem</h3>
+
+    <p>A single match can be worth at most one win to a team. So when v3's leverage multiplier started producing individual matches worth more than a full win, that was a real problem, not a rounding curiosity. It implied a player's own contribution exceeded the entire value of the result, with nothing left over for ten teammates. Basketball WAR never runs into this, and the reason turned out to be structural, not a missing safety cap: it never converts to wins at the game level in the first place. A season is the unit that gets converted, built from a rate (value per possession) times a volume (minutes played).</p>
+
+    <p>Restructured the same way, v4 accumulates leverage-weighted value in <em>runs</em>, which have no natural per-match ceiling, across a full season, and converts to wins exactly once, on that total. No match-level number is ever treated as a bounded share of one win, so there's nothing left to cap.</p>
+
+    <h3>v5 &mdash; the discipline gap, and the patch that outlived its usefulness</h3>
+
+    <p>Even after all of that, the leaderboard read strangely: bowling performances dominated the season table almost completely. That felt off, and it was measurable: per ball of work, bowling was producing 51% more value than batting. Not explained by leverage (nearly identical between disciplines). Not explained by how wickets get priced, or so it seemed at the time &mdash; that specific assumption is exactly what turned out to be wrong, five versions later.</p>
+
+    <p>The fix, at the time, was a calibration constant applied to bowling RAR, rescaling it so both disciplines landed on an identical per-ball rate. It wasn't a number picked once and forgotten &mdash; it recomputed itself from the data on every run, which meant it kept quietly re-balancing the two disciplines back to parity through v6, v7, v8, and v9, no matter what else changed underneath it. That turned out to be exactly the problem: a real, underlying mispricing (see v10) was there the whole time, and this patch was erasing the evidence of it on every single run instead of ever letting it surface. Removed in v10, once the actual cause was found.</p>
+
+    <p>One refinement from this stage does still hold: bowlers are compared to a <em>type-matched</em> replacement, not a pooled pace-and-spin average. A spinner is judged against a replacement-level spinner, a seamer against a replacement-level seamer. That's part of what caught Ashwin's Nagpur spell (see <a href="https://sid36252.github.io/root-cause/">Root Cause</a>'s findings section), and it's the direct answer to a fair worry: a spinner running through a raging turner isn't doing what a fast bowler would've done on the same surface, and shouldn't be judged as if they were.</p>
+
+    <h3>v6 &mdash; the wrong tool, then the right one</h3>
+
+    <p>The idea was simple: does a player benefit from playing at home? The data says yes, clearly. Batters average more at home than away; bowlers concede fewer runs at home than away. I built a home/away factor off exactly that, and the leaderboard moved in sensible-looking directions.</p>
+
+    <p>Then I checked it against a specific player, because a home/away split has an obvious blind spot: "away" isn't one place. It's every country that isn't your own, averaged together, and those countries are not remotely similar. Bumrah is the case that breaks it. He's an Indian seamer, and the assumption going in was that he'd be getting an artificial discount for his home Indian performances, since fast bowling in India has a reputation for being the hard way round.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">What went wrong</span>
+      <p>Checked Bumrah's bowling average by host country: 17.7 in India, 17.2 in Australia, 20.8 in South Africa, 26.2 in England. His best figures are at home, not away from it &mdash; the home/away model had it backwards, discounting his most impressive performances for the wrong reason. What drives it isn't home soil. It's that India, historically, is genuinely hard for pace bowling, so a 17.7 average there is a bigger outperformance than a similar figure somewhere pace-friendly.</p>
+    </div>
+
+    <p>The fix: replace the home/away flag with a factor keyed to the specific hosting country <em>and</em> the bowler's own type. Rebuilt this way, Bumrah's home Indian figures come out as his most valuable, not his least, and the country&times;type factors line up with the general shape of India's reputation for tough pace-bowling conditions &mdash; the heatmap in <a href="https://sid36252.github.io/root-cause/">Root Cause</a> is the current version of this reading.</p>
+
+    <h3>v7 &mdash; position, a bug of my own making, and a further refinement</h3>
+
+    <p>Reconstructed real batting position from the ball-by-ball sequence (who's at the crease first, tracked innings by innings) rather than assuming it, then compared each player to a replacement level specific to their slot. First version used three buckets &mdash; opener, middle, everyone from #7 down &mdash; and the leaderboard mostly moved the way you'd expect.</p>
+
+    <p>Mostly. Mark Boucher's career total jumped dramatically, a large enough move on a single player to stop and check rather than wave through.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">What went wrong</span>
+      <p>Boucher wasn't misclassified. He genuinely bats at #7 (90 of his 111 innings), correctly bucketed as "lower order" under the 3-bucket scheme. The problem was the bucket itself: lumping position 7 in with positions 8&ndash;11 blends a specialist keeper-batter's returns in with genuine tail-enders, dragging the replacement bar for #7 down to somewhere between a real batter and a bowler who bats. Against that lowered bar, a merely-good #7 like Boucher looked like a great one.</p>
+    </div>
+
+    <p>Fixed by splitting the tail: opener, middle, a dedicated bucket for #7 specifically, and #8&ndash;11 as the true tail. Boucher's career total came back down to a much less dramatic level &mdash; a real, modest adjustment instead of an artifact.</p>
+
+    <p>The obvious next question: if four buckets was an improvement on three, is eleven an improvement on four? Built it properly: exact position 1 through 11 for every innings, each with its own era-specific replacement bar. The position factors came out exactly as cricket would predict, close to neutral at the top of the order, peaking at #4, and falling steadily to #11. #4 isn't the hardest place to bat, it's the easiest, since it's where the best batter in most sides gets to build an innings against an older ball, with a platform already in place. That's part of why it carries the highest bar, though not the whole reason: the factor is built from what everyone who has ever batted at #4 actually scored there, and teams don't send a random player to #4, they send their best one. So some of that reading is genuinely easier conditions, and some of it is just that the sample at #4 is disproportionately good players. Either way, the effect on the bar is the same: a good batter is expected to cash in at #4, so the model correctly demands more production before crediting anyone there with value above replacement. This version, eleven individual positions, is what the batting side of the model uses.</p>
+
+    <h3>v8 &mdash; the bowling pitch factor was answering two questions with one number</h3>
+
+    <p>The clearest single example was Danish Kaneria's 5 for 205 against Sri Lanka at Karachi in 2009. On inspection, the value the model was assigning it looked wrong, and it was &mdash; which is what sent me looking at truncated and rain-affected matches as a class, rather than treating it as a one-off. Pulling every drawn Test where fewer than 20 wickets fell across the whole match, then comparing the model's implied pitch difficulty against what every bowler who actually played that match had conceded, showed the same pattern over and over: the model's implied replacement economy was routinely two to three times the real scoring rate of the match. Not a one-off rounding gap, but a systematic mismatch across dozens of matches. That's a sign the number means something other than what it's supposed to.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">What went wrong</span>
+      <p>The pitch factor was a single runs-per-wicket ratio, and that ratio conflates two different things: how many runs came (a stable quantity &mdash; balls bowled is rarely small) and how fast wickets fell (an unstable one &mdash; wickets can collapse to almost nothing in a rain- or time-truncated match, independent of how the pitch actually played). In a match that ends in a draw because the game ran out of time rather than because the pitch was easy to survive, only a handful of wickets fall relative to how many overs get bowled. A runs-per-wicket ratio built on that thin a wicket count is a much noisier sample than the same ratio from a completed match, and it showed: across every truncated match checked, the implied difficulty reading was wildly disconnected from what the bowlers who actually played it produced.</p>
+    </div>
+
+    <p>Fixed by decomposing the single ratio into two independently-shrunk per-ball rates: an economy factor (runs conceded per ball vs era norm) and a wicket-rate factor (wickets per ball vs era norm), each shrunk on balls bowled rather than wickets taken, since balls stay stable through a truncated match even when wickets don't. Validated against a held-out prediction check before trusting it: on a weighted log-error basis, the decomposed version predicts match outcomes noticeably better than the old combined ratio did. Rechecked individually, the truncated matches that had shown the worst mismatch came back into line with their actual scoring rates, and the bowlers who played them kept the credit they'd actually earned.</p>
+
+    <h3>v9 &mdash; a weighting mismatch that had been inflating bowling since v1</h3>
+
+    <p>Checking v8's fix meant building a proper predictive validation for the first time in this whole project: instead of eyeballing whether a number matches known cricket history, hold out a slice of matches, fit everything else on the rest, and see whether a given adjustment actually predicts the held-out data better than not having it. Tested against opposition quality, the adjustment that's been in the model since v1, the result was uncomfortable: opposition quality alone made predictions <em>worse</em> than ignoring the opposition entirely, 7.4% worse on a weighted error basis. A shuffled, meaningless version of the same factor did even worse, so it wasn't pure noise. But it wasn't earning its place either.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">What went wrong</span>
+      <p>Opposition quality is a balls-weighted average: a bowler's exposure to a batting lineup, weighted by how many balls each opposing batter faced. But the league baseline it was divided by was dismissal-weighted: pooled runs over pooled outs across every player, tail-enders included. Those are two different yardsticks. Good batters both average more <em>and</em> face more balls per dismissal, so a balls-weighted reading systematically favours the strongest players in a lineup relative to a dismissal-weighted population average. Checked directly: the balls-weighted mean across the whole dataset came out at 35.5, against a dismissal-weighted league average of 30.9 &mdash; a ~15% gap, present in every match, in every season, since v1.</p>
+    </div>
+
+    <p>Fixed by rebuilding the league baseline to use the exact same balls-weighted methodology as the opposition-quality numerator, so the two sides of the ratio are finally measuring the same thing. Once fixed, that same held-out test flipped cleanly: opposition quality alone went from making predictions 7.4% worse to 3.7% better, and opposition plus country conditions together went from a 4.7% improvement to a 12.6% improvement &mdash; nearly triple.</p>
+
+    <p>Two more checks came out of the same push, both worth naming even though neither changed the model. Batting's equivalent pitch factor turned out to already be using the truncation-adaptive shrinkage built for v8, since it shares the same underlying calculation and doesn't have bowling's specific ratio-conflation problem, so nothing to fix there. And a two-way check on batting position (does netting player quality out of the #4 premium change anything) found a striking-looking result in-sample: almost the entire #4 premium collapsed once you controlled for who bats there. It then failed a proper held-out test. The old, selection-contaminated position factor predicts held-out performance slightly <em>better</em> than the "corrected" one, because this model is built around replacement level, and teams essentially never put a true replacement player at #4. The pooled reading, contamination and all, turns out to be the more honest proxy for that slot. Tested properly, and correctly left alone.</p>
+
+    <h3>v10 &mdash; a wicket wasn't worth what the model thought it was</h3>
+
+    <p>This was supposed to be a smaller check. There'd been a query about whether the model was simply bowler-weighted by nature, since more players bat in an innings than genuinely bowl, so a fixed pool of value naturally concentrates among fewer bowlers. Checking that specific mechanism directly, it held up completely: batters and bowlers split an equal-sized pool of value under the old calibration (by construction), and the higher average bowling total per player tracked almost exactly with the smaller number of players who bowl (headcount ratio 1.375, mean-value ratio 1.402). Correctly implemented, not a bug. That should have been the end of it.</p>
+
+    <p>But a second, independent check was still available: the win-probability model from v2, abandoned for individual rankings but never actually tested as an aggregate pricing tool. Its own replacement-level-adjusted totals (batting vs bowling, each netted against its own discipline's fringe-player baseline, not a shared one) put batting at roughly 3.6&times; bowling's aggregate value, a completely different picture from the current model's forced 50/50. Tempting, but a dead end. Rechecking which individual bowlers that measure rated highly showed the same failure v2 was abandoned for in the first place: Lyon, Anderson and Starc all came out with bowling value at or below zero, an absurd result driven by elite bowlers being deployed at exactly the moments a wicket is already expected, so a "surprise"-sensitive model systematically undercredits them. The aggregate total inherits that same contamination. Not usable.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">What went wrong</span>
+      <p>One more comparison from the same win-probability model turned out to be clean, because it doesn't credit any individual player or depend on who was selected to bowl when: the model's raw, averaged-across-everyone value of a single wicket-event against a single run-event. A wicket costs the batting side ~5.3 win-probability points on average; a run is worth ~0.16. That puts a wicket's true value at ~33 runs &mdash; and it's stable, not a fluke: 33.0 &plusmn; 0.5 across 200 bootstrap resamples of matches the win-probability model never trained on, and nearly identical in-sample (32.8) and out-of-sample (33.0). The model's actual formula, meanwhile, was pricing a wicket using a replacement bowling average of 36&ndash;44 runs depending on era and pitch &mdash; a validated ~10&ndash;30% overpricing on every single wicket, repeated across every bowler in the dataset for the life of this project.</p>
+    </div>
+
+    <p>Re-pricing wickets at their validated ~33-run value and rerunning the pipeline changed almost nothing at first glance: the v5 calibration constant just quietly absorbed the difference, rescaling upward to force the two disciplines back to equal totals regardless of the more accurate wicket price underneath. That was the actual discovery. v5's calibration wasn't correcting an imbalance; it was hiding one, on every single run, for five versions. Batting and bowling RAR were never guaranteed to land on equal totals in the first place &mdash; they're each measured against their <em>own</em> discipline's replacement baseline, and there's no law of cricket that says those two gaps have to match. Forcing them to match was a choice made under the assumption that the pre-calibration imbalance was necessarily a bug. Once the actual bug (the wicket price) was found and fixed, that assumption no longer had anything to hide behind.</p>
+
+    <p>Dropped the v5 calibration step entirely and let the corrected wicket price set the ratio on its own. Batting came out ahead of bowling by roughly 1.83&times; in aggregate WAR &mdash; the number behind the 64.7/35.3 split in <a href="https://sid36252.github.io/root-cause/">Root Cause</a>, and the reason Joe Root leads that leaderboard outright rather than Nathan Lyon. The rest of the pipeline's validated checks (opposition and country predictive power) were rerun afterward and came back unchanged, confirming nothing else in the model broke on the way through.</p>
+
+    <p>None of that, on its own, proves the new split is closer to the truth: a wicket price that's individually well-measured could still combine badly with everything else in the model. So the last check was the most direct one available: for every decisive Test in the dataset, sum each team's batting and bowling RAR and see whether the gap between the two teams actually predicts who won. Fit on a random 70% of matches, evaluated on the held-out 30%, the old calibrated model already did well at this (AUC 0.982); team RAR is, unsurprisingly, a strong signal of match outcomes either way. The new, repriced and uncalibrated model did better: AUC 0.985, log-loss 0.154 against the old model's 0.175, accuracy 94.3% against 91.5%. Repeated across 200 random resamples of the split, the new model beat the old one on held-out accuracy in all 200. That's the strongest evidence in this whole project that a specific fix made the model better, not just different.</p>
+
+    <h3>Tested and rejected: home-only country conditions</h3>
+
+    <p>A follow-up question from the Anderson-vs-Steyn debate in <a href="https://sid36252.github.io/root-cause/">Root Cause</a>: South Africa's pace-friendly country factor is what holds Steyn's number down. Is that factor actually measuring conditions, or is it partly measuring how good South Africa's own bowlers happen to be? Home bowlers outperform touring ones in every country by some margin, but checking directly, South Africa's gap is the largest of any checked, by a clear margin.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Home vs away pace wicket rate, by host country</caption>
+        <thead>
+          <tr><th>Country</th><th class="num">Home wkt rate</th><th class="num">Away wkt rate</th><th class="num">Ratio</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">South Africa</td><td class="num">0.0228</td><td class="num">0.0167</td><td class="num"><strong>1.37</strong></td></tr>
+          <tr><td class="name">Australia</td><td class="num">0.0194</td><td class="num">0.0154</td><td class="num">1.26</td></tr>
+          <tr><td class="name">India</td><td class="num">0.0170</td><td class="num">0.0135</td><td class="num">1.26</td></tr>
+          <tr><td class="name">New Zealand</td><td class="num">0.0182</td><td class="num">0.0159</td><td class="num">1.15</td></tr>
+          <tr><td class="name">England</td><td class="num">0.0191</td><td class="num">0.0173</td><td class="num">1.10</td></tr>
+          <tr><td class="name">Pakistan</td><td class="num">0.0154</td><td class="num">0.0145</td><td class="num">1.07</td></tr>
+          <tr><td class="name">West Indies</td><td class="num">0.0182</td><td class="num">0.0178</td><td class="num">1.02</td></tr>
+          <tr><td class="name">Sri Lanka</td><td class="num">0.0146</td><td class="num">0.0157</td><td class="num">0.93</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>And touring pace bowlers in South Africa take wickets at essentially the global average rate for the era &mdash; not elevated at all. That's a clean, checkable pattern: the "South Africa is pace-friendly" reading looks like it's being generated almost entirely by South Africa's own bowlers &mdash; Pollock, Ntini, Steyn, Morkel, Philander, Rabada, Nortje, a remarkable production line &mdash; outperforming everyone else there, not by the pitches rewarding pace bowling generally. Steyn himself only accounts for 8% of the South African pace sample, which rules out simple self-skewing, but his cohort collectively is large enough to move the country-wide reading.</p>
+
+    <p>The fix seemed obvious: re-estimate the country factor from away (touring) bowlers only, isolating the conditions effect from the home-talent effect, and apply that neutral reading to everyone, home or away. Rebuilding the pipeline this way changed the leaderboard substantially &mdash; Steyn's bowling WAR jumped from 5.12 to 8.22, and the same mechanism lifted every bowler who does most of their work at home, pulling the aggregate batting/bowling split from 64.7/35.3 back to roughly 55/45.</p>
+
+    <p>Validated on matches held out entirely from fitting, it made predictions worse, not better: weighted RMSE of 0.52 against the original pooled version's 0.48, worse than using no country factor at all (0.50). Scored only on the home-bowler cases the fix specifically targeted, the gap was even wider. Bootstrapped across 200 resamples of the train/test split, the away-only version lost to the original every single time. A home bowler's historical edge in their own conditions turns out to be useful information for predicting how they'll do there, not bias to strip out &mdash; the same lesson as the position two-way check above, arrived at independently. Reverted; Steyn's number in <a href="https://sid36252.github.io/root-cause/">Root Cause</a> is unchanged.</p>
+
+    <h3>Tested and rejected: pricing a wicket by the batter's quality</h3>
+
+    <p>A wicket is currently priced the same regardless of who got out: the same ~33-run base value whether the dismissed batter averages 50 or 3, discounted only by leverage, never by the batter's own quality. A natural next question, raised directly rather than found by chasing a suspicious result: should dismissing a recognised top-order batter count for more than cleaning up a number 11?</p>
+
+    <p>First attempt: price each wicket by the dismissed batter's own trailing quality rating, the same shrunk, era-adjusted per-player figure already used for opposition quality, relative to the league average that year. Built and checked against the leaderboard, and something looked wrong immediately &mdash; bowling WAR rose for nearly every bowler checked, not a mix of winners and losers the way a genuine redistribution of credit should look.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">What went wrong</span>
+      <p>The formula priced actual wickets by the specific victim's quality, but priced the replacement bowler's hypothetical wickets at a flat, neutral rate &mdash; a baseline mismatch, not a real signal. The average wicket in this dataset goes to a batter rated about 6.5% above league average, likely survivorship bias: a batter bad enough to be dropped quickly never accumulates many career dismissals, so a random wicket-taking ball disproportionately involves an established, better-than-average player. That mismatch inflated almost every bowler's number by roughly the same amount instead of redistributing credit between them. Held out and tested: AUC fell from 0.985 to 0.964, and the version lost the 200-resample bootstrap 0 times out of 200.</p>
+    </div>
+
+    <p>Fixed by pricing the replacement bowler's hypothetical wickets at the same average opposition quality the real bowler actually faced that match, computed from every ball bowled rather than just the wicket-taking ones, instead of a flat neutral rate. This version behaves the way a real redistribution should: 460 players moved up, 487 moved down, 117 barely changed. Anderson, Lyon, Steyn, Ashwin and Broad all rated lower; Root, Kohli, Smith and Tendulkar all rated higher. Held out and tested, it came much closer to holding up: AUC 0.985 to 0.982, winning 25.5% of the 200 bootstrap resamples, up from 0% &mdash; but still a net loss.</p>
+
+    <p>Tried to find a version that actually won before giving up on the idea. Tightening how far a single wicket's price could swing made it worse, not better (14.5%). Widening that range further made no real difference (26.0%). Blending the flat and victim-adjusted prices halfway made it worse again (12.5%). Nothing tested came close to beating the current model, and there was no sweet spot between no signal and full signal to find.</p>
+
+    <p>A third attempt tried a completely different, far more robustly-sampled construction: instead of a continuous per-player rating, bucket the dismissed batter into top-6 or tail (#7&ndash;11) and price the wicket using the win-probability model's own empirical event value for that bucket, computed directly from ball-by-ball win-probability swings rather than batting averages. The split is real: top-6 wickets cost the batting side a win-probability swing equivalent to ~45.5 runs (18,004 events), tail wickets ~23.8 runs (10,653 events), both far bigger samples than any per-player rating could offer. Built with the same symmetric construction that fixed the continuous version (replacement wickets priced at the bowler's own average top6/tail mix faced that match, not a flat rate), and it did worse, not better: AUC 0.985 to 0.978, winning just 1.0% of the 200 bootstrap resamples. The likely reason: top-order wickets fall earlier in an innings, when win-probability swings are naturally larger because the game state is still uncertain, and tail wickets disproportionately fall once a match is already decided &mdash; the same match-state confound that sank the innings-level pitch-wear idea above. Leverage is already applied as its own separate step in this pipeline, so a wicket price built straight from raw win-probability swings most likely double-counts that effect rather than adding anything new.</p>
+
+    <p>Three attempts now, all at the same real question, rejected for related but distinct reasons: an asymmetric baseline that inflated every bowler uniformly; then, once that bug was fixed, a real but weak signal that adds noise rather than value; and a coarser, better-sampled version of the same idea that turned out to be measuring leverage a second time rather than victim quality at all. Left as tested and rejected, alongside the country-conditions idea above.</p>
+
+    <h3>Stress-tested and held up: is the country factor unfair to Lyon and Steyn?</h3>
+
+    <p>The away-only test above was the first attempt at a specific worry: that the country x type factor makes Australia look artificially brutal for spin and South Africa artificially kind to pace, inflating Nathan Lyon's rating and depressing Dale Steyn's for reasons that have nothing to do with real conditions. Away-only was one way to test that. It wasn't the only one, and it's worth showing the rest of the attempts rather than stopping at the first result that happened to go against the worry.</p>
+
+    <p><strong>Venue-level conditions.</strong> Sydney Cricket Ground's spin wicket rate (0.0130/ball, 17,235 balls, 25 Tests) sits meaningfully above Australia's overall spin rate (0.0124), and the Gabba sits meaningfully below (0.0113) &mdash; a real difference the country-level factor can't see, since it treats every Australian venue identically. Built a venue-level refinement, shrunk toward each venue's own country x type baseline, and layered it on top of the existing country factor. Held out and tested: AUC fell from 0.985 to 0.981, winning only 8% of the 200 bootstrap resamples. Tried much heavier shrinkage (roughly 4x stronger) in case thin-sample venues were adding noise; barely moved (7%). Breaking SCG's rate down by innings explained why: it isn't elevated from ball one, it's elevated almost entirely in the 4th innings (0.0091 in the 1st, climbing to 0.0208 in the 4th, while the rest of Australia barely moves across the same span). A flat, whole-match venue factor smears a real but narrow, late-match-specific effect across innings where it doesn't apply, adding noise rather than signal.</p>
+
+    <p><strong>Innings-level pitch wear.</strong> The SCG finding pointed at something bigger: across the whole dataset, not just one venue, wicket rate climbs sharply through a Test's four innings, and far more for spin than pace (pace +11% from 1st to 4th innings then flat; spin +53%, climbing the whole way, ending above pace's own rate). Batting average falls 25% over the same span. Every bucket here has 80,000+ balls behind it. Built an innings-number refinement, ball-weighted per bowler per match since the underlying tables are already aggregated per match, not per innings. Held out and tested: AUC fell from 0.985 to 0.980, winning just 1 of 200 bootstrap resamples &mdash; a worse result than the venue-specific version, despite the much larger, cleaner-looking sample behind it. The likely reason: a team's 4th innings is disproportionately a run-chase or a collapse, so wickets falling faster there is tangled up with which side is already losing, not purely pitch physics. A bowler closing out a tight chase in the 4th innings is doing exactly the thing that predicts winning; discounting those wickets as "expected, conditions were tougher" removes real signal rather than adding noise.</p>
+
+    <p><strong>Four narrower checks</strong>, each aimed directly at whether the Lyon/Steyn gap specifically is an artifact:</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Country-factor stress tests</caption>
+        <thead>
+          <tr><th>Check</th><th>Finding</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">Opposition quality faced</td><td>South Africa's pace bowlers face opposition rated 1.9% above the balls-weighted league baseline; Australia's spin bowlers face opposition rated 3.7% above. Too small to explain a 30%+ gap in wicket rate.</td></tr>
+          <tr><td class="name">Lyon's weight in his own baseline</td><td>He's 25.7% of Australia's entire spin sample (17,873 of 69,594 balls). Home Australian spinners take wickets at 0.0153/ball there against 0.0117 for touring ones &mdash; real, but removing Lyon from his own comparison pool would raise his rating, not lower it.</td></tr>
+          <tr><td class="name">Deployment-timing selection bias</td><td>Spin's share of overs 1&ndash;30 of an innings is 22.4% in South Africa against 22.0% in Australia, nearly identical. Restricting the comparison to just those standardised early overs <em>widens</em> the spin gap (South Africa 0.0158 vs Australia 0.0112, a 29% gap against 13% on the full pooled data), the opposite of what a "spin only bowled in garbage time" story predicts.</td></tr>
+          <tr><td class="name">Compression on extreme pitches</td><td>Coefficient of variation of per-bowler wicket rate: 0.378 for South Africa's pace bowlers, 0.437 for Australia's spinners &mdash; spin is actually spread <em>wider</em>, not compressed. Top-decile/bottom-decile ratio is nearly identical either way (2.84 vs 2.82).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>That last door didn't stay closed for long. Hand-labeled sub-type for the same ~186 frontline bowlers already in the pace/spin heuristic (off-spin, leg-spin, left-arm orthodox, left-arm wrist for spinners; left-arm vs right-arm for pace), covering 90% of all balls bowled by type. Built a sub-type refinement layered on the existing country x type factor the same way venue and innings were, and it failed too: AUC 0.985 to 0.981, winning just 2.5% of the 200 bootstrap resamples. The labels are real cricket knowledge, not guesses, and the coverage is good, but the result is the same shape as everything else in this section: a plausible-looking refinement that makes the model worse, not better, once actually tested.</p>
+
+    <p>Seven separate mechanisms tried now, three of them full model rebuilds and four of them narrower, targeted checks, and none of them turns "Australia is hard for spin, South Africa is easy for pace" into an artifact. Several actively strengthen the case that it's real: the gap survives restricting to standardised early-match conditions, it survives checking for a compression effect, and correcting for Lyon's own weight in his own baseline would make his rating go up, not down. This is the same kind of result as the replacement bar note elsewhere in this piece: a reading that looks at first like it could be a bug, tested from every angle available, and holding up as a real feature of the data rather than one.</p>
+
+    <h3>Two more tested and rejected: team strength and ball age</h3>
+
+    <p><strong>Team Elo.</strong> A different angle on the same underlying question opposition quality already addresses: individual victim-quality pricing measures the specific players faced, but team-level effects &mdash; form, momentum, depth beyond the XI &mdash; might carry information a player-level average misses. Built a standard Elo rating from match results alone (K=24, every team starting at 1500, strictly pre-match with no lookahead), normalized to each five-year era's mean rating to avoid a drift bias. Checked first whether it was even worth building: correlation with the existing balls-weighted opposition-quality factor came back at 0.55, meaningfully different information, not redundant, unlike most of what else got tested this session. Applied as a second multiplicative factor alongside the existing opposition-quality adjustment, on both batting and bowling. Held out and tested: AUC fell from 0.985 to 0.965, and it lost the 200-resample bootstrap 0 times out of 200 &mdash; the single worst result of anything tried, despite passing its own pre-check. The likely explanation: win/loss-based Elo is noisy at the individual-match level (rain-affected results, dead-rubber team rotations, small early-career samples under an aggressive K-factor), and that noise outweighed whatever genuine signal the 0.55 correlation implied.</p>
+
+    <p><strong>Ball age.</strong> A more mechanically grounded idea: the laws of cricket give the fielding side a second new ball from over 80 of an innings, so wicket-taking conditions shouldn't be flat across an innings even setting pitch wear and match state aside. Checked the raw pattern first: wicket rate is 0.0162 in overs 1&ndash;20 (new-ball assistance), drops to 0.0152 in overs 21&ndash;50 (worn ball, no swing), then climbs back through 0.0158 in overs 51&ndash;80 to 0.0188 in overs 80 and beyond &mdash; a U-shape, not the steady climb the already-rejected innings-number version showed, and a shape that matches the actual new-ball rule rather than generic pitch deterioration. Built a ball-age refinement from this, layered on the existing country x type factor the same way venue and innings were. Held out and tested: AUC 0.985 to 0.984, winning 27.0% of the 200 bootstrap resamples &mdash; the closest any refinement came to beating the current model this session, and still a net loss. Lyon and Steyn both move only slightly (Lyon up, Steyn essentially flat), a far gentler redistribution than most of what else was tried, consistent with a mechanism that's real but modest rather than a bug in the reading. Tried smoothing the four hard bucket edges into a continuous spline fitted to the actual per-over wicket-rate and economy curves, in case the discreteness itself was the problem &mdash; it wasn't: 26.5% of the 200 bootstraps, essentially identical to the bucketed version. The ceiling here isn't bucket-boundary noise.</p>
+
+    <p>Nine attempts now at improving on the current model's baseline factors, all rejected, one of them close. At some point a consistent pattern like this becomes its own finding: the current combination of adjustments looks like it's sitting near a genuine ceiling for this validation metric, not waiting on the next refinement to unlock it.</p>
+
+    <h3>A ceiling check: does a smarter model find more signal?</h3>
+
+    <p>Every validation in this piece uses the same tool: logistic regression on one number, a team's total RAR differential. Worth asking directly whether that's leaving real predictive signal on the table, or whether the current combination of adjustments is genuinely close to the limit of what these inputs can predict, rather than just under-modelled.</p>
+
+    <p>Gave a gradient-boosting classifier (scikit-learn's HistGradientBoostingClassifier, avoiding an external XGBoost dependency) the same batting and bowling RAR differentials, first as two separate features instead of one pre-summed number, then with team Elo and era added for a richer shot at finding leftover signal. The simplest change alone, just not pre-summing batting and bowling into one number, before any tree model got involved, won 99.5% of 200 bootstraps: AUC 0.988 to 0.996, log-loss more than halved (0.154 to 0.074), accuracy 94.3% to 98.6%. The tree-based versions matched this but didn't beat it. A much bigger jump than anything else tested this session.</p>
+
+    <p>That result needed checking before trusting it. The standardized coefficient on batting differential came out roughly 4.4x the coefficient on bowling differential (the two are correlated 0.865 in this dataset &mdash; a team winning the batting battle usually wins the bowling one too, so they're far from independent signals). That's the same shape as v2's original failure, where the raw win-probability model also rated batting far above bowling, traced at the time to elite bowlers being deployed at exactly the moments a wicket is already expected, undercrediting them in a model sensitive to surprise. Worth checking directly whether this is that same bug back in a different form: is the batting/bowling asymmetry here being driven by the same bowlers v2 flagged &mdash; Lyon, Anderson, Starc, and the rest?</p>
+
+    <div class="callout finding">
+      <span class="callout-label">The check</span>
+      <p>Recomputed the split regression with those exact v2-flagged bowlers &mdash; 46 players, effectively the entire elite tier by the v8-vs-v2 gap &mdash; excluded from bowl_diff entirely. If this were the same bug, removing them should clean up bowling's remaining signal. Instead the asymmetry got worse: the bowl/bat coefficient ratio dropped from 0.226 to 0.073. The elite bowlers are carrying most of whatever real predictive power bowling RAR has here; the rest is mostly noise. Not the v2 bug.</p>
+    </div>
+
+    <p>The more likely explanation: batting runs sit almost directly on the final scoreboard margin, a continuous signal. Bowling's contribution runs mostly through wickets, a discrete, lumpy event (at most 20 in a match) priced at one validated average (~33 runs, stable at 33.0 &plusmn; 0.5 across 200 bootstraps, per v10) that's accurate on average across the whole dataset but inherently higher-variance at the level of any single match. Batting RAR is a smoother signal of match-level contribution; bowling RAR is lumpier even when correctly calibrated on average.</p>
+
+    <p>That distinction matters for what to conclude. WAR's job is measuring average contribution to winning across a career, using the best available average pricing, which v10 already validated independently and robustly. This check shows single-match outcome <em>prediction</em> is inherently easier from batting data than bowling data &mdash; a narrower, different claim than "bowling is overvalued" or "WAR should be reweighted." Left as a documented finding, not a model change.</p>
+
+    <h3>Pursued anyway: a joint hierarchical model</h3>
+
+    <p>The country, sub-type, and ball-age refinements above were each fit the same way: one factor, estimated on its own, shrunk toward its own separately-chosen prior, then multiplied into the pipeline sequentially. The natural next question is whether fitting all three <em>jointly</em> &mdash; one shared model that lets the data decide how much each combination of country, sub-type, and ball-age should borrow strength from the others, instead of three independent passes &mdash; does better. My honest read going in was that this was unlikely to help, since it changes how already-tested signals are estimated rather than adding a new one, and every attempt to add or restructure signal this session had landed at or below the current baseline. Pursued anyway.</p>
+
+    <p>Built as a ridge regression on one-hot country x type, sub-type, and ball-age-bucket features, fit simultaneously for both economy and wicket-rate, with the regularization strength chosen by cross-validation rather than picked by hand &mdash; the same shrinkage principle as everywhere else in this project, just fit jointly instead of sequentially. The first result was the most striking of the entire session: the only model change out of eleven attempts to actually beat the current one. AUC 0.985 to 0.990, log-loss down 13%, winning 82.5% of the 200 bootstraps.</p>
+
+    <p>That result was strong enough to need real stress-testing before trusting it, not just a shrug and a ship. First check: the original cross-validation split balls randomly, which doesn't respect match boundaries, so balls from the same match could leak across the inner train/test folds used to pick the regularization strength. Refit with match-grouped cross-validation instead &mdash; the result survived, a bit weaker (76.0% of bootstraps) but clearly still a real win. Second check: walk-forward validation at five different cutoffs (2015 through 2021, training only on the past each time). Won at every single one. By the two standard checks this session has used throughout, this looked solid.</p>
+
+    <div class="callout bug">
+      <span class="callout-label">The check that actually broke it</span>
+      <p>Excluded the matches involving the eight players driving the biggest swings (Ashwin, Steyn, Anderson, Kallis, Rabada, Philander, Cummins, Lyon) and re-ran the validation on the other 321 matches alone. The advantage vanished completely: 47.0% of bootstraps, a coin flip. Checked why: Lyon is 52.8% of his own "Australia, spin, off-spin" comparison cell; Ashwin is 36.7% of "India, spin, off-spin." At this level of granularity, the model's factor for a player's own conditions is substantially a summary of that same player's own career, feeding straight back into their own baseline. This is the exact same failure mode as the "Lyon's weight in his own baseline" check from the country-factor investigation earlier in this piece &mdash; found there too, but small enough (25.7% of a broad country-wide pool) to not matter. Splitting that same pool finer, by sub-type, concentrates it enough that it does.</p>
+    </div>
+
+    <p>Rejected, and not adopted as the model. The result is real in a narrow sense &mdash; it did score better, consistently, across both random and temporal splits &mdash; but it isn't a genuine, generalizable improvement in how conditions get priced. Both of the standard checks this session relies on test <em>temporal</em> generalization (does the pattern hold in the future); neither tests <em>player</em> generalization (does the pattern hold for players other than the ones defining it). This one needed the second kind of check to catch, and it's a real methodological lesson for reading any future granular refinement, not just this one: passing bootstrap and walk-forward validation isn't sufficient once a factor gets fine-grained enough that individual players can dominate their own comparison cell.</p>
+
+    <h3>Also tested and rejected: a time-varying replacement bar</h3>
+
+    <p>The fringe/replacement classification used everywhere in this project decides a player's status from their final, whole-career Test tally &mdash; a real, if narrow, form of foresight. A player who eventually plays 150 Tests is never counted as replacement level, not even in his first Test, when he was, at that exact moment, entirely indistinguishable from a genuine journeyman. Fixed by rebuilding the whole replacement-level pipeline with a time-varying version instead: a player's fringe status entering any given match is decided only by Tests played strictly before it, never their eventual total.</p>
+
+    <p>The fringe pool nearly tripled (1,391 to 3,989 bowling-match rows), since it now includes every future star's rookie-year performances alongside genuine journeymen. Rebuilt the full pipeline &mdash; opposition quality, pitch factors, wicket price, country and position, all of it &mdash; on top of this new baseline, and the result was almost entirely one-directional: 980 of roughly 1,064 players rated lower, only 2 rated higher, though the career correlation with the current model stayed fairly high (0.943). Held out and tested: AUC fell from 0.985 to 0.982, winning 11.0% of the 200 bootstrap resamples.</p>
+
+    <p>The fix closes a real gap &mdash; the replacement bar genuinely no longer has any foresight baked into it. But the practical effect isn't a fairer re-ordering of who's better than whom; the high correlation with the current model says the ordering barely moved. It's mostly a uniform, one-directional recalibration of the whole scale upward, since an eventual star's rookie performances tend to be better than a genuine journeyman's, dragging the replacement average up wherever they're now included. That extra signal turned out to add noise to the baseline rather than sharpen it. Rejected; the whole-career definition, foresight and all, is still what's shipped.</p>
+
+    <h3>Checked and found sound: is the model overconfident at the extremes?</h3>
+
+    <p>AUC only tests whether the model ranks matches correctly relative to each other, not whether its actual probability numbers mean what they say &mdash; a badly overconfident model could still rank perfectly. Worth checking directly: does a predicted 90% win probability actually correspond to a real 90% win rate, particularly in the high-stakes, late-match scenarios where that distinction matters most.</p>
+
+    <p>Built a reliability curve on the held-out test matches: predicted probability bucketed against actual outcome. Most buckets land within a few percentage points of the diagonal. The extreme end (predicted above 85% win probability, 107 matches) shows mild overconfidence, not a dramatic one &mdash; the model's average prediction there was 98.8%, the real win rate 97.2%. Tried fixing it with isotonic regression, fit on the training split and applied to the held-out one, and it made the Brier score slightly worse (0.0451 to 0.0457), not better. With only 215 held-out matches to fit a recalibration curve on, isotonic regression, a flexible, non-parametric method, has too little data to learn a reliable correction and mostly just fits noise specific to that sample. The model's calibration is already reasonably sound as it stands; a formal recalibration step isn't earning its complexity.</p>
+
+    <h3>Checked before building: does a keeper deserve a lower batting bar?</h3>
+
+    <p>Root Cause already flags this as a known gap: a keeper-batter's real value is mostly in the gloves, and that's invisible to a model built purely from ball-by-ball data, leaving only a modest batting record on show. The natural fix would be a lower replacement bar for keepers specifically, reflecting the selection tradeoff. Before building a whole new layer for it, checked whether that premise actually holds.</p>
+
+    <p>Keepers aren't hand-labeled anywhere in this pipeline, but Cricsheet's own dismissal records make them identifiable without any external data: whoever is credited on a stumping is unambiguously the keeper for that team that match, since only a keeper can effect one. Extended to catches by cross-referencing against a roster of players with three or more career stumpings. Covers 1,506 of 1,780 team-matches, 84.6%.</p>
+
+    <p>With keepers identified, compared their batting average directly against non-keepers at the same batting position &mdash; "keeper vs replacement level" isn't the right test, since an established keeper, like an established specialist, comfortably clears a fringe-level bar regardless. The real question is whether keepers underperform genuine specialists in the same slot. They don't. At every position checked, keepers outperformed non-keepers: position 5 (+5.5%), position 6 (+7.2%), position 7 (+6.3%, the most common keeper slot, on a solid 1,297-dismissal sample), position 8 (+60%, on a thinner sample). The "gloves over runs" tradeoff the whole idea rests on doesn't hold in this dataset.</p>
+
+    <p>Almost certainly an era effect: this dataset covers 2001&ndash;2026, spanning cricket's shift toward genuine wicketkeeper-batters (Gilchrist onward, then Sangakkara-era Sri Lanka, Pant, de Kock, Bairstow) rather than a specialist gloveman tolerated for his hands alone. Building a lower replacement bar for keepers would have moved in exactly the wrong direction, crediting them for clearing a bar they're already beating without any help. Checked directly before committing to a build, and the premise didn't survive contact with the data. No model change.</p>
+
+    <h3>Also tested and rejected: pricing a wicket by how set the batter was</h3>
+
+    <p>A cricketing intuition that hadn't been tested yet: a fresh batter's wicket should be cheaper than a well-set one's, since survival itself is a signal of difficulty overcome. Checked directly in the win-probability data before building anything: bucket all 28,657 Test wickets in this dataset by the dismissed batter's cumulative balls faced, and read off the model's own empirical cost per bucket.</p>
+
+    <p>The gradient was real, monotonic, and well-sampled &mdash; fresh wickets (0&ndash;15 balls faced, 9,062 of them) cost the batting team about 31 runs of win probability; well-set ones (80+ balls, 6,158 of them) cost about 41, a roughly 31% spread, rising smoothly through two intermediate buckets in between. That's exactly the kind of signal that earned the top-6/tail wicket-price split its place in the model already.</p>
+
+    <p>Built the same way as that split: a bucket-specific multiplier on the shipped, era-adjusted flat wicket price, with the replacement bowler's hypothetical wickets priced at the same settledness mix the bowler actually bowled to, so neither side is compared against a flat neutral rate. But the risk flagged before writing a line of code was the one that sank it: a batter who survives 80+ balls is usually also batting for a team in a stronger position generally, so the higher "cost" of dismissing them partly reflects match state the model already prices through leverage, not the batter's skill in getting through the new-ball period. Held-out validation confirmed it &mdash; the bootstrap comparison favored this version in just 6.0% of 200 resamples, and a 2020 walk-forward split showed the same pattern out of time. A real, clean signal in the raw win-probability data, and still a leverage confound rather than new predictive information once run through the same test every other candidate has to pass.</p>
+
+    <h3>Also tested and rejected: an explicit win/draw/loss model</h3>
+
+    <p>The win-probability model at the heart of this whole project (v2 onward) regresses a single target, win_points, coded 1/0.5/0 for a win/draw/loss. That collapses two very different match states into the same number: a team cruising to a near-certain draw (say 95% draw, 2.5% win, 2.5% loss) and a team in a genuinely balanced 50/50 win-or-loss battle both average out to 0.5, even though they're nothing alike. An explicit 3-class model, predicting P(win), P(draw), and P(loss) separately rather than one blended number, can in principle tell them apart.</p>
+
+    <p>Built one: a gradient-boosting classifier on the same four match-state features (innings, run lead, wickets down, balls left), trained on the same held-out split, collapsed back into an expected win value (P(win)&times;1 + P(draw)&times;0.5) for everything downstream that consumes a single win-probability number &mdash; leverage and the validated wicket price alike. One real limitation going in: scikit-learn's gradient booster doesn't support the monotonic constraints (more wickets down can only ever hurt the batting team) for a 3-class target the way it does for the original binary regressor, so this version has no built-in guarantee against a wicket occasionally looking good for the team that just lost one.</p>
+
+    <p>That gap showed up directly in the numbers. Re-deriving the wicket price from this model's own event values, the same bootstrap methodology that produced the original's tight 33.0 &plusmn; 0.5 runs figure came back at 35.6 &plusmn; 0.9 &mdash; a wider, noisier estimate, and one era in particular (2005&ndash;2009) swung from 33.5 to 42.5 runs, a jump too large to trust. Re-leveraging career WAR with this model's own leverage index told a similar story: still highly correlated with the current rankings (0.996 on total WAR, 0.983 on rank), but leverage itself agreed with the original much more loosely (correlation 0.84) than a genuine refinement should.</p>
+
+    <p>Held out and tested the way every wicket-price change this session has been: rebuilt bowling RAR with the new price and ran it through the standard match-outcome check. It lost decisively &mdash; AUC fell from 0.985 to 0.978, and it lost all 200 of the 200 bootstrap resamples, a result echoed in a 2020 walk-forward split (0.989 to 0.985). The 3-class distinction is conceptually the more honest model of what a draw actually is. In practice, without the monotonic constraint that keeps the original regressor's predictions smooth, it produces a noisier wicket price that generalizes worse, not better. Rejected; the single-target regressor, cruder distinction and all, is still what's shipped.</p>
+
+    <h3>An open problem: allrounders and roster flexibility</h3>
+
+    <p>A question worth taking seriously, chased through three different attempts, none of which held up cleanly enough to ship. Batting and bowling WAR, summed for one player, should in principle already measure "how much better is this player in this slot than a replacement would be" &mdash; but only if the replacement baseline reflects what a real substitute would actually cost the team. A team fielding a genuine allrounder effectively gets two contributions from one roster slot, which can mean fitting a stronger batting order <em>and</em> a deep enough bowling attack into the same eleven players. If a true dual-threat replacement is harder to find than the population-level replacement averages assume, an allrounder's real value could be understated.</p>
+
+    <p><strong>First attempt: does the batting order get stronger further down, when the allrounder plays?</strong> Restricted to each player's own era, so "without them" means genuine absences rather than a different generation of teammates.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Batting position quality, with vs. without the allrounder (same era)</caption>
+        <thead>
+          <tr><th>Player</th><th>Team</th><th class="num">Tests with / without</th><th class="num">Pos 6 gap</th><th class="num">Pos 7 gap</th><th class="num">Pos 8 gap</th><th class="num">Pos 9 gap</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">RA Jadeja</td><td>India</td><td class="num">86 / 52</td><td class="num">+1.3</td><td class="num">+2.4</td><td class="num">+4.6</td><td class="num"><strong>+6.1</strong></td></tr>
+          <tr><td class="name">Shakib Al Hasan</td><td>Bangladesh</td><td class="num">68 / 34</td><td class="num">+8.8</td><td class="num">+1.1</td><td class="num">+6.5</td><td class="num">&minus;2.9</td></tr>
+          <tr><td class="name">BA Stokes</td><td>England</td><td class="num">121 / 46</td><td class="num">&minus;0.6</td><td class="num">+1.7</td><td class="num">+1.1</td><td class="num">&minus;0.4</td></tr>
+          <tr><td class="name">JH Kallis</td><td>South Africa</td><td class="num">88 / 6</td><td class="num">+2.9</td><td class="num">+1.8</td><td class="num">&minus;2.6</td><td class="num">+1.7</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Jadeja shows a clean, monotonically increasing effect: every tail position rates stronger with him in the side, climbing from +1.3 at #6 to +6.1 at #9. Nobody else replicates that shape. Shakib shows a partial version, with solid bumps at #6 and #8, but negative at #9 and barely there at #7. Stokes shows almost nothing, and what's there isn't consistent in direction. Kallis can't be tested at all: he played 88 of South Africa's 94 Tests in his own era, leaving only 6 matches without him, not a genuine counterfactual, just noise dressed up as one. One clean signal, one partial one, one that doesn't replicate, and one that can't be tested: not a general effect, or at least not one this particular measure can see clearly.</p>
+
+    <p><strong>Second attempt: does a genuine allrounder let the team use fewer other bowlers?</strong> A more direct version of the same idea &mdash; not who bats where, but how many other players need to contribute overs at all. This one looked much better at first: all five players above showed fewer other bowling contributors (30+ balls) per match when they played, from &minus;0.47 (Stokes) to &minus;0.99 (Ashwin), consistent in direction across every case.</p>
+
+    <p>It didn't survive the next check. Splitting by bowling type revealed the real driver: pure specialist spinners, with no batting ability at all, reduce a team's need for other bowlers by almost exactly as much as genuine batting-bowling allrounders who happen to bowl spin (4.22 vs 4.23 other contributors at high workloads, from an identical starting point). Specialist pace bowlers show a similar pattern to batting-allrounder pace bowlers too. The effect is a mechanical property of bowling type &mdash; a spinner can sustain a much bigger share of a day's overs than a seamer can, so any team leaning on a lot of spin needs fewer bodies to cover the same total overs, regardless of whether that spinner can bat. Jadeja and Ashwin showing the strongest numbers in the first pass wasn't evidence of two-way value; it's because they're both spinners, and any specialist spinner would show the same thing. Building a credit off this would have rewarded spin-bowling allrounders for being spinners, not for being allrounders, while pace-bowling allrounders like Stokes and Kallis would have been shortchanged for the same reason. Dropped.</p>
+
+    <p><strong>Third attempt: does an allrounder's presence predict winning better than their own summed WAR already does?</strong> A cleaner test in principle, since it doesn't depend on guessing the mechanism. If there's hidden value the additive model misses, a team with a recognised two-way contributor (batting and bowling WAR both meaningfully positive per Test, 14 players in this dataset qualify) should win more often than its raw batting-plus-bowling differential alone predicts. Adding an allrounder-presence indicator to the held-out match-outcome model did improve the fit slightly (AUC 0.985 to 0.986, log-loss 0.154 to 0.150), but the indicator's own coefficient came back negative, the opposite of what a hidden bonus would look like. The more likely explanation isn't that allrounders hurt their teams; it's a selection effect running the other way. Teams often lean on a genuine allrounder specifically <em>because</em> they're short elsewhere in batting or bowling depth, not because allrounders make an already-strong side stronger. Whatever is happening here, it isn't evidence for crediting allrounders more.</p>
+
+    <p>Three different approaches, three non-results: one real-looking pattern that doesn't generalise past a single player, one that turned out to be a bowling-type artifact rather than a batting-skill effect, and one direct test that came back with the wrong sign. I don't think there's a credit mechanism to build from any of this. The most honest conclusion available right now is that the existing additive model, batting WAR plus bowling WAR, each measured on its own terms, may already be close to right, or that if a genuine roster-flexibility bonus exists, it isn't detectable with what's in this dataset. Left open rather than closed, since "we tried three ways to find it and couldn't" is a different, weaker claim than "it isn't real." For now, nothing changed in the model.</p>
+
+    <hr class="divider">
+
+    <p>That's the full build. For what it actually found, the leaderboard, the head-to-head debates, and where the model still falls short, back to <a href="https://sid36252.github.io/root-cause/"><strong>Root Cause</strong></a>.</p>
+
+  </article>
+
+  <footer class="colophon">
+    <div>Data &middot; Cricsheet ball-by-ball archive, Test matches 2001&ndash;2026 (914 matches, 1,762,524 deliveries)</div>
+    <div>Model &middot; opposition-, pitch-, country- and position-adjusted RAR (eleven individual batting slots, decomposed economy/wicket-rate bowling pitch factor, wickets priced at their win-probability-validated value), leverage weighting, season-level win conversion &mdash; no cross-discipline calibration</div>
+    <div>Companion piece &middot; <a href="https://sid36252.github.io/root-cause/">Root Cause</a> (findings and leaderboard)</div>
+  </footer>
+
+</div>
+</body>
+</html>
