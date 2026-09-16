@@ -268,10 +268,17 @@
   }
   .ledger-row {
     display: grid;
-    grid-template-columns: 3.4rem 1fr;
+    grid-template-columns: 3.4rem 1fr 5.5rem;
     gap: 1rem;
     padding: 1rem 1.2rem;
     border-bottom: 1px solid var(--line);
+  }
+  .ledger-metric {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    text-align: right;
+    padding-top: 0.15rem;
   }
   .ledger-row:last-child { border-bottom: none; }
   .ledger-v {
@@ -523,7 +530,108 @@
 
     <p>Ten rebuilds got this Wins Above Replacement model for Test cricket from a first pass at "runs above a replacement player" to where it stands now. Most of the moves were straightforward improvements. Three were real bugs, caught by checking a result that looked wrong until it wasn't wrong any more, and one of those three was big enough to flip who tops the entire leaderboard. Twelve more were plausible-looking ideas that got built, tested against held-out data, and correctly rejected. One more is still open. Three separate attempts at the same real question, each looking promising before failing to hold up under closer checking, with nothing yet to show for it. All of it is below, in order.</p>
 
+    <div class="chart-block">
+      <p class="chart-title">The ten-version build, at a glance</p>
+      <div class="chart-svg-wrap">
+        <svg viewBox="0 0 900 400" role="img" aria-label="Diagram of the ten model versions in build order, with bugs caught at v3 and v7, v2's pricing method reused at v10, v5's calibration patch removed at v10, and the post-v10 branch into twelve rejected refinements and one open problem">
+
+          <line x1="55" y1="140" x2="820" y2="140" stroke="var(--ink-faint)" stroke-width="1.5"/>
+
+          <path d="M 140,127 C 300,55 600,55 807,127" fill="none" stroke="var(--gold-strong)" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowGold)"/>
+          <text x="470" y="50" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--gold-strong)">event-level pricing reused</text>
+
+          <path d="M 480,153 C 560,182 720,182 807,153" fill="none" stroke="var(--leather)" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowLeather)"/>
+          <text x="650" y="200" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--leather)">calibration patch removed</text>
+
+          <polygon points="225,108 233,122 217,122" fill="var(--leather)"/>
+          <text x="225" y="100" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--leather)">bug</text>
+          <line x1="225" y1="122" x2="225" y2="127" stroke="var(--leather)" stroke-width="1.5"/>
+
+          <polygon points="565,108 573,122 557,122" fill="var(--leather)"/>
+          <text x="565" y="100" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--leather)">bug</text>
+          <line x1="565" y1="122" x2="565" y2="127" stroke="var(--leather)" stroke-width="1.5"/>
+
+          <circle cx="55" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="55" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">1</text>
+          <text x="55" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Foundation</text>
+          <text x="55" y="184" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">(RAR)</text>
+
+          <circle cx="140" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="2" stroke-dasharray="3,2"/>
+          <text x="140" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">2</text>
+          <text x="140" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Win-prob</text>
+          <text x="140" y="184" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">shelved</text>
+
+          <circle cx="225" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="225" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">3</text>
+          <text x="225" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Leverage</text>
+
+          <circle cx="310" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="310" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">4</text>
+          <text x="310" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Wins/season</text>
+
+          <circle cx="395" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="2" stroke-dasharray="3,2"/>
+          <text x="395" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">5</text>
+          <text x="395" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Calibration</text>
+          <text x="395" y="184" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">patch</text>
+
+          <circle cx="480" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="480" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">6</text>
+          <text x="480" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Country&#215;type</text>
+
+          <circle cx="565" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="565" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">7</text>
+          <text x="565" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Position</text>
+
+          <circle cx="650" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="650" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">8</text>
+          <text x="650" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Pitch factor</text>
+
+          <circle cx="735" cy="140" r="13" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="735" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">9</text>
+          <text x="735" y="172" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Opp. weight</text>
+          <text x="735" y="184" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">AUC 0.982</text>
+
+          <circle cx="820" cy="140" r="15" fill="var(--gold-strong)" stroke="var(--gold-strong)" stroke-width="2"/>
+          <text x="820" y="145" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--paper)">10</text>
+          <text x="820" y="174" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Wicket price</text>
+          <text x="820" y="186" text-anchor="middle" font-family="var(--font-mono)" font-size="9" font-weight="600" fill="var(--gold-strong)">flips leaderboard</text>
+
+          <line x1="820" y1="155" x2="820" y2="230" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <line x1="820" y1="230" x2="520" y2="230" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <line x1="520" y1="230" x2="520" y2="260" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowMuted)"/>
+          <line x1="820" y1="230" x2="820" y2="260" stroke="var(--ink-faint)" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrowMuted)"/>
+
+          <rect x="310" y="268" width="420" height="46" rx="6" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="1"/>
+          <text x="520" y="287" text-anchor="middle" font-family="var(--font-mono)" font-size="10" font-weight="600" fill="var(--ink-soft)">12 refinements tried since v10</text>
+          <text x="520" y="302" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-faint)">each one failed a held-out validation check</text>
+
+          <rect x="745" y="268" width="150" height="46" rx="6" fill="var(--paper-raised)" stroke="var(--pitch)" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="820" y="287" text-anchor="middle" font-family="var(--font-mono)" font-size="10" font-weight="600" fill="var(--pitch)">1 still open</text>
+          <text x="820" y="302" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--pitch)">allrounder value</text>
+
+          <defs>
+            <marker id="arrowGold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--gold-strong)"/>
+            </marker>
+            <marker id="arrowLeather" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--leather)"/>
+            </marker>
+            <marker id="arrowMuted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ink-faint)"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+      <div class="chart-legend">
+        <span><span class="swatch" style="background:var(--gold-strong)"></span>kept / shipped</span>
+        <span><span class="swatch" style="background:var(--paper-raised); border:1.5px dashed var(--ink-faint);"></span>shelved or removed later</span>
+        <span><span class="swatch" style="background:var(--leather)"></span>real bug caught here</span>
+      </div>
+      <p class="chart-note">Ten versions in build order, left to right. Two threads don't run straight through the trunk. v2's individual-ranking model was shelved, but its event-level pricing came back to catch the v10 bug five versions later. v5's calibration patch papered over that same bug for four versions before v10 found the real cause and it was dropped. Everything after v10 branches off the shipped model, current baseline AUC 0.985, either into the twelve refinements that were tried and rejected, or the one question still open.</p>
+    </div>
+
     <p class="section-mark">The build, in order</p>
+    <p class="table-hint">AUC wasn't tracked as a formal held-out metric until v9; earlier versions were checked against known cricket history instead, not a validation score. Higher AUC is better; the current shipped baseline is 0.985.</p>
 
     <div class="ledger">
       <div class="ledger-row">
@@ -533,6 +641,7 @@
           <p>Batting and bowling averages, adjusted for opposition quality and era, compared against a "replacement" baseline built from players with 10 or fewer career Tests, the fringe-of-the-squad pool, not a league-average player.</p>
           <span class="verdict kept">Foundation &middot; kept</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v2</div>
@@ -541,6 +650,7 @@
           <p>The "correct" long-term fix. Train a model on match state (runs, wickets, overs left) to predict win probability ball by ball, then credit players with the swing they caused. It worked, and then ranked the greatest bowlers of the era at the very bottom of the table.</p>
           <span class="verdict fixed">Abandoned as a standalone leaderboard &middot; its event-level pricing became essential much later, see v10</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v3</div>
@@ -549,6 +659,7 @@
           <p>Instead of trusting raw win-probability swings, use the model only to measure <em>stakes</em>, how much a wicket would have mattered at that exact moment. Multiply v1's already-robust numbers by it, and big moments start counting for more.</p>
           <span class="verdict fixed">Introduced a new bug &middot; fixed in v4</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v4</div>
@@ -557,6 +668,7 @@
           <p>The basketball-style fix: never treat one match's number as a bounded "share of a win." Accumulate value in runs across a whole season, and convert to wins exactly once, at the end.</p>
           <span class="verdict kept">Structural fix &middot; kept</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v5</div>
@@ -565,6 +677,7 @@
           <p>Measured directly. Bowling was producing 51% more value per ball of work than batting, even after everything above. Introduced a single rescaling constant, recomputed from the data every run, to force both disciplines onto the same per-ball footing. Held for five iterations, until v10 found the real cause of the imbalance and made this step unnecessary.</p>
           <span class="verdict fixed">Superseded by v10, once the real cause was found</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v6</div>
@@ -573,6 +686,7 @@
           <p>First attempt was a home/away flag, the wrong tool, since "away" pools together wildly different conditions. Rebuilt as a factor keyed to the specific hosting country and the bowler's own type (pace or spin), which is what explains why the same bowler can look very different in different places.</p>
           <span class="verdict fixed">First pass wrong, rebuilt &middot; kept</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v7</div>
@@ -581,6 +695,7 @@
           <p>Reconstructed real batting order from the ball sequence and gave each slot its own replacement bar. First version used 3 buckets and produced a suspicious jump for a keeper-batter; rebuilt with 4, then refined further to all eleven individual slots once the 4-bucket version was checked and found to still be leaving signal on the table.</p>
           <span class="verdict kept">Kept &middot; batting side of the model</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v8</div>
@@ -589,6 +704,7 @@
           <p>A single runs-per-wicket ratio was doing the job of two different signals. How many runs came (stable, since balls bowled is rarely small) and how fast wickets fell (unstable, since wickets can collapse to almost nothing in a rain- or time-truncated match regardless of how the pitch played). Split into two independently-shrunk per-ball rates instead. Validated against a held-out prediction check before shipping.</p>
           <span class="verdict shipped">Kept &middot; bowling side of the model</span>
         </div>
+        <div class="ledger-metric">n/a</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v9</div>
@@ -597,6 +713,7 @@
           <p>A bowler's opposition-quality reading was balls-weighted (exposure-weighted, favouring whichever batters stayed at the crease longest), but the league baseline it was divided by was dismissal-weighted (pooled runs over pooled outs). Two different yardsticks measuring the same thing. Fixed to match, and a held-out predictive check flipped from opposition quality making predictions <em>worse</em> than ignoring it entirely to making them meaningfully better.</p>
           <span class="verdict shipped">Kept &middot; the model's baseline going into v10</span>
         </div>
+        <div class="ledger-metric">AUC 0.982</div>
       </div>
       <div class="ledger-row">
         <div class="ledger-v">v10</div>
@@ -605,6 +722,7 @@
           <p>The one that flipped the leaderboard. A wicket was being converted into runs using a replacement bowling average, a plausible-sounding proxy that turned out to overprice a wicket by 10&ndash;30%. Replaced with the win-probability model's own measured value (~33 runs, validated by bootstrap on held-out matches), and dropped the v5 calibration step entirely, since it had been masking this exact bug rather than fixing anything. Full story below.</p>
           <span class="verdict shipped">Kept &middot; the model's current, uncalibrated baseline</span>
         </div>
+        <div class="ledger-metric">AUC 0.985</div>
       </div>
     </div>
 
