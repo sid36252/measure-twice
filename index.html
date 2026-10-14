@@ -523,17 +523,70 @@
 
     <h3 id="key-findings">What changed the rankings</h3>
 
-    <p>Most of the eighteen versions moved nothing near the top of the table. A handful did. The rest of this piece explains each one, and the ledger of all eighteen is in the appendix at the end.</p>
+    <p>Most of the eighteen versions moved nothing near the top of the table. A handful did. The rest of this piece explains each one, and the ledger of all eighteen is in the <a href="#appendix-ledger">appendix</a> at the end.</p>
 
-    <p><strong>v12, the 2001&ndash;2008 scorecard layer.</strong> Ball-by-ball data covers little of those years, so the model had no baseline to build from. Scoring the missing Tests from scorecards put that era on the same footing as the rest, and v13 and v14 gave the layer leverage and batting position.</p>
+    <p><strong><a href="#v12">v12, the 2001&ndash;2008 scorecard layer.</a></strong> Ball-by-ball data covers little of those years, so the model had no baseline to build from. Scoring the missing Tests from scorecards put that era on the same footing as the rest, and <a href="#v13">v13</a> and <a href="#v14">v14</a> gave the layer leverage and batting position.</p>
 
-    <p><strong>v15, pricing a wicket from every match.</strong> The wicket price had come from a fifth of the matches, and redrawing that fifth was enough to swap second and third. It now comes from all of them, each predicted by a model that never saw it.</p>
+    <p><strong><a href="#v15">v15, pricing a wicket from every match.</a></strong> The wicket price had come from a fifth of the matches, and redrawing that fifth was enough to swap second and third. It now comes from all of them, each predicted by a model that never saw it.</p>
 
-    <p><strong>v16 and v17, opposition and conditions.</strong> Opponents are rated on where their runs were made, leverage is out-of-fold, and each country's conditions are measured against the same period. Each was kept on held-out evidence, and each changed the order near the top.</p>
+    <p><strong><a href="#v16">v16</a> and <a href="#v17">v17</a>, opposition and conditions.</strong> Opponents are rated on where their runs were made, leverage is out-of-fold, and each country's conditions are measured against the same period. Each was kept on held-out evidence, and each changed the order near the top.</p>
 
-    <p><strong>v18, the double count.</strong> A spinner's conditions credit multiplied the match's pitch factor by a country factor built from the same runs and wickets. Removing the double count dropped Lyon from first to fifth and is why a batter leads the table.</p>
+    <p><strong><a href="#v18">v18, the double count.</a></strong> A spinner's conditions credit multiplied the match's pitch factor by a country factor built from the same runs and wickets. Removing the double count dropped Lyon from first to fifth and is why a batter leads the table.</p>
 
-    <p><strong>What did not change it.</strong> Fifteen ideas were tested and rejected, among them pricing a wicket by the batter's quality, a joint hierarchical fit and an explicit win/draw/loss model. Each failed a held-out check or moved no ranking. They are logged so nobody repeats them. The Australian spin factor is the least settled number left, and the section after v18 shows how far it moves under every fix tried.</p>
+    <p><strong>What did not change it.</strong> Fifteen ideas were tested and rejected, among them pricing a wicket by the batter's quality, a joint hierarchical fit and an explicit win/draw/loss model. Each failed a held-out check or moved no ranking. They are logged so nobody repeats them. The Australian spin factor is the least settled number left, and the <a href="#after-v18">section after v18</a> shows how far it moves under every fix tried, and <a href="#robustness">the robustness table</a> and <a href="#uncertainty">the bootstrap</a> show how much the top of the table depends on it.</p>
+
+    <div class="chart-block">
+      <p class="chart-title">How the model fits together</p>
+      <div class="chart-svg-wrap">
+        <svg viewBox="0 0 900 260" role="img" aria-label="Flow diagram of the model in eight steps: data, replacement level, runs above replacement, opposition, then conditions, wicket price, leverage and conversion to wins, each labelled with the version that introduced it">
+          <rect x="30" y="20" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="120" y="44" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">1. Data</text>
+          <text x="120" y="64" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">Cricsheet ball by ball</text>
+          <text x="120" y="80" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">+ scorecards 2001&ndash;08 (v12&ndash;14)</text>
+          <rect x="250" y="20" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="340" y="44" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">2. Replacement level</text>
+          <text x="340" y="64" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">players with 10 or fewer</text>
+          <text x="340" y="80" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">career Tests (v1, v11)</text>
+          <rect x="470" y="20" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="1.5"/>
+          <text x="560" y="44" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">3. Runs above replacement</text>
+          <text x="560" y="64" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">batting: 11 slots (v8)</text>
+          <text x="560" y="80" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">bowling: economy, wickets (v6)</text>
+          <rect x="690" y="20" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="780" y="44" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">4. Opposition</text>
+          <text x="780" y="64" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">rated on home-adjusted</text>
+          <text x="780" y="80" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">runs, three-year record (v16)</text>
+          <rect x="690" y="150" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="780" y="174" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">5. Conditions</text>
+          <text x="780" y="194" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">pitch and country factors</text>
+          <text x="780" y="210" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">same-period baseline (v8, v17, v18)</text>
+          <rect x="470" y="150" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="560" y="174" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">6. Wicket price</text>
+          <text x="560" y="194" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">about 34 runs, from every</text>
+          <text x="560" y="210" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">match, out-of-fold (v10, v15)</text>
+          <rect x="250" y="150" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--ink-faint)" stroke-width="1.5"/>
+          <text x="340" y="174" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">7. Leverage</text>
+          <text x="340" y="194" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">how much the moment</text>
+          <text x="340" y="210" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">mattered, out-of-fold (v3, v17)</text>
+          <rect x="30" y="150" width="180" height="78" rx="6" fill="var(--paper-raised)" stroke="var(--gold-strong)" stroke-width="1.5"/>
+          <text x="120" y="174" text-anchor="middle" font-family="var(--font-mono)" font-size="11" font-weight="600" fill="var(--ink)">8. Wins</text>
+          <text x="120" y="194" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">runs per win by period,</text>
+          <text x="120" y="210" text-anchor="middle" font-family="var(--font-mono)" font-size="9" fill="var(--ink-soft)">summed into WAR (v1)</text>
+          <line x1="210" y1="59" x2="248" y2="59" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+          <line x1="430" y1="59" x2="468" y2="59" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+          <line x1="650" y1="59" x2="688" y2="59" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+          <line x1="780" y1="98" x2="780" y2="148" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+          <line x1="688" y1="189" x2="650" y2="189" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+          <line x1="468" y1="189" x2="430" y2="189" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+          <line x1="248" y1="189" x2="210" y2="189" stroke="var(--ink-faint)" stroke-width="1.5" marker-end="url(#arrowFlow)"/>
+          <defs>
+            <marker id="arrowFlow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ink-faint)"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+      <p class="chart-note">Read the top row left to right, then the bottom row right to left. Each box names the version that introduced or last changed it. The two outlined boxes are where a player's raw production first becomes a rating and where it becomes wins. Steps 4 to 7 are the adjustments the later versions refined.</p>
+    </div>
 
     <div class="chart-block">
       <p class="chart-title">The first ten versions, at a glance</p>
@@ -1160,6 +1213,33 @@
     <p>Root is first in 57% of resamples and in the top three in 89%. No adjacent pair is separated at the 90% level. The most secure order is Anderson over Broad, ahead in 74% of resamples. The top ten is best read as one tier led by Root more often than not, and not as ten separate places. The order inside it is the model's best estimate, and a different set of Tests could reshuffle it.</p>
 
     <p>A second check asked whether the Australian spin factor is the pitch or the batters faced. It fits wickets and runs per ball on 1,630,307 legal balls, separately for spin and pace, with a match effect, then adds each bowler, then each batter. For 2015 to 2019 the Australian spin factor is 1.25 from the match effect alone, 1.32 with bowlers held fixed and 1.29 with batters held fixed as well. Dropping Lyon's balls moves it to 1.35, and halving or doubling the penalties gives 1.36 and 1.21. The batter effects improve prediction on unseen matches, since spin runs deviance per ball falls from 0.1479 with bowlers to 0.1398 with batters. The factor holds between 1.21 and 1.36, and the strength of the batters faced does not explain it. This was a diagnostic, and nothing in the model changed.</p>
+
+    <h3 id="player-level">Do the ratings predict the future?</h3>
+
+    <p>Everything above is validated on the same Tests the ratings were built from. This asks a harder question and tests the player ratings themselves. For each decisive Test from 2013, every player in each XI gets a rating built only from his earlier matches: his career WAR per Test so far, shrunk toward zero (replacement level) by 10 Tests. A team's strength is the sum of its XI's ratings, and a logistic regression on the difference between the two sides, with home advantage, predicts the winner. It is fitted year by year on the Tests since 2009 and scored on the next year, so no match is ever predicted by a rating that has seen it. The same exercise is run with simple alternatives.</p>
+
+    <div class="table-wrap">
+      <table class="oos">
+        <caption>Predicting 469 decisive Tests, 2013 to 2026, from ratings built on earlier matches only</caption>
+        <thead>
+          <tr><th>Predictors</th><th class="num">AUC</th><th class="num">Log-loss</th><th class="num">Accuracy</th><th class="num">WAR ahead on AUC</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">Home advantage only</td><td class="num">0.5807</td><td class="num">0.6615</td><td class="num">63.3%</td><td class="num">100%</td></tr>
+          <tr><td class="name">Home and experience</td><td class="num">0.6567</td><td class="num">0.6397</td><td class="num">65.0%</td><td class="num">100%</td></tr>
+          <tr><td class="name">Home and unadjusted averages</td><td class="num">0.7020</td><td class="num">0.6213</td><td class="num">65.2%</td><td class="num">98%</td></tr>
+          <tr><td class="name"><strong>Home and WAR</strong></td><td class="num">0.7428</td><td class="num">0.5999</td><td class="num">69.3%</td><td class="num">&ndash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>WAR from earlier matches predicts the winner with an AUC of 0.743 against 0.702 for unadjusted batting and bowling averages, 0.657 for experience alone and 0.581 for home advantage alone. It beats the averages on AUC in 98% of 200 resamples of the test Tests and on log-loss in 86%. Only ball-by-ball history is used, so WAR has the same information as the averages. Adding the 2001 to 2008 scorecard history gives an AUC of 0.743, and shrinking by 5 or 20 Tests instead of 10 gives 0.743 and 0.741.</p>
+
+    <p>These numbers are far lower than the 0.98 earlier in this piece, and the two are not comparable. The earlier checks score a team's rating in a match against that match's result. This one rates the players before the match and asks who wins, which is much harder and is the test a rating has to pass to be worth anything. It also shows how much of a Test's result no rating can see.</p>
+
+    <p>A player's rating carries over, but loosely. Across 1,683 player-years with at least three Tests in each of two consecutive years, the rank correlation between one year's WAR per Test and the next year's is 0.19. Across 147 players with at least 40 Tests, first-half and second-half WAR per Test have a rank correlation of 0.49. A single year is mostly noise and a career is mostly signal, which is why the leaderboard is built on careers.</p>
+
+    <p>The ratings use only earlier matches, but the model's factors (conditions, opposition and batting positions) were fitted on the whole period. So this is out of sample for the player ratings and not for the full pipeline. Refitting every factor for each test year would close that gap and is not done here.</p>
 
     <p class="section-mark" id="appendix-ledger">Appendix &middot; the version ledger</p>
     <p class="table-hint">AUC wasn't tracked as a formal held-out metric until v9; earlier versions were checked against known cricket history instead, not a validation score. Higher AUC is better; the shipped baseline was 0.985 at v10 and is 0.981 now.</p>
