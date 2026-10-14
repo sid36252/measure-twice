@@ -1202,7 +1202,7 @@
 
     <h3 id="robustness">How much the top of the table depends on these choices</h3>
 
-    <p>Each row below reruns the model with one choice changed and shows the held-out checks and career WAR, with rank in brackets, for the top five. Root is first in 8 of the 9 rows and never lower than second. Anderson is second in 8. Lyon ranges from first to twelfth, which makes him the most sensitive name in the table, and the main reason is how Australian conditions for spin are treated.</p>
+    <p>Each row below reruns the model with one choice changed and shows the held-out checks and career WAR, with rank in brackets, for the top five. Root is first in 9 of the 10 rows and never lower than second. Anderson is second in 9. Lyon ranges from first to twelfth, which makes him the most sensitive name in the table, and the main reason is how Australian conditions for spin are treated.</p>
 
     <div class="table-wrap">
       <table class="variants">
@@ -1220,6 +1220,7 @@
           <tr><td class="name">No opposition adjustment at all</td><td class="num">0.9975</td><td class="num">0.0642</td><td class="num">16.01 (1)</td><td class="num">15.36 (2)</td><td class="num">13.41 (3)</td><td class="num">12.88 (4)</td><td class="num">11.54 (6)</td></tr>
           <tr><td class="name">Home and touring bowlers measured separately</td><td class="num">0.9493</td><td class="num">0.2858</td><td class="num">16.93 (1)</td><td class="num">14.13 (2)</td><td class="num">12.28 (5)</td><td class="num">13.19 (3)</td><td class="num">9.63 (12)</td></tr>
           <tr><td class="name">Country effect fitted alongside each bowler's own rate</td><td class="num">0.9835</td><td class="num">0.1649</td><td class="num">16.97 (1)</td><td class="num">16.70 (2)</td><td class="num">15.01 (4)</td><td class="num">13.32 (6)</td><td class="num">15.62 (3)</td></tr>
+          <tr><td class="name">Bowler and batters faced held fixed, penalties by cross-validation</td><td class="num">0.9844</td><td class="num">0.1601</td><td class="num">16.84 (1)</td><td class="num">16.12 (2)</td><td class="num">14.23 (3)</td><td class="num">13.28 (5)</td><td class="num">13.96 (4)</td></tr>
         </tbody>
       </table>
     </div>
@@ -1228,7 +1229,7 @@
 
         <h3 id="uncertainty">How certain is the top of the table?</h3>
 
-    <p>Every figure so far is a point estimate. To see how much the order depends on which Tests are in the sample, I drew 200 resamples of whole Tests, 1,091 in each including the 201 scorecard Tests, and rebuilt every player's career WAR from the matches drawn. The factors and prices are held fixed at their fitted values, so this measures the sampling variance of the match set and not the parameter variance of refitting the model each time. Refitting the whole pipeline 200 times would take hours, so these ranges understate the full uncertainty. Drawing whole matches also redraws how many Tests a player appears in, so each range includes some noise from volume.</p>
+    <p>Every figure so far is a point estimate. To see how much the order depends on which Tests are in the sample, I drew 200 resamples of whole Tests, 1,091 in each including the 201 scorecard Tests, and rebuilt every player's career WAR from the matches drawn. The factors and prices are held fixed at their fitted values, so this measures the sampling variance of the match set and not the parameter variance of refitting the model each time. Refitting the whole pipeline 200 times would take hours, so these ranges understate the full uncertainty. Drawing whole matches also redraws how many Tests a player appears in, so each range includes some noise from volume. A second version also moves the country factors a random distance toward the cross-validated fit described below in each draw, a one-direction stand-in for refitting them.</p>
 
     <div class="table-wrap">
       <table class="bootstrap">
@@ -1251,9 +1252,15 @@
       </table>
     </div>
 
-    <p>Root is first in 57% of resamples and in the top three in 89%. No adjacent pair is separated at the 90% level. The most secure order is Anderson over Broad, ahead in 74% of resamples. The top ten is best read as one tier led by Root more often than not, and not as ten separate places. The order inside it is the model's best estimate, and a different set of Tests could reshuffle it.</p>
+    <p>Root is first in 57% of resamples and in the top three in 89%. No adjacent pair is separated at the 90% level. The most secure order is Anderson over Broad, ahead in 74% of resamples. Root is first in 52% of those draws, against 57% with the factor fixed, and Lyon's rank range moves from 1 to 18 to 1 to 16. The top ten is best read as one tier led by Root more often than not, and not as ten separate places. The order inside it is the model's best estimate, and a different set of Tests could reshuffle it.</p>
 
-    <p>A second check asked whether the Australian spin factor is the pitch or the batters faced. It fits wickets and runs per ball on 1,630,307 legal balls, separately for spin and pace, with a match effect, then adds each bowler, then each batter. For 2015 to 2019 the Australian spin factor is 1.25 from the match effect alone, 1.32 with bowlers held fixed and 1.29 with batters held fixed as well. Dropping Lyon's balls moves it to 1.35, and halving or doubling the penalties gives 1.36 and 1.21. The batter effects improve prediction on unseen matches, since spin runs deviance per ball falls from 0.1479 with bowlers to 0.1398 with batters. The factor holds between 1.21 and 1.36, and the strength of the batters faced does not explain it. This was a diagnostic, and nothing in the model changed.</p>
+    <p>A second check asked whether the Australian spin factor is the pitch or the batters faced. It fits wickets and runs per ball on 1,630,307 legal balls, separately for spin and pace, with a match effect, then adds each bowler, then each batter. For 2015 to 2019 the Australian spin factor is 1.25 from the match effect alone, 1.32 with bowlers held fixed and 1.29 with batters held fixed as well. Dropping Lyon's balls moves it to 1.35, and halving or doubling the penalties gives 1.36 and 1.21. The batter effects improve prediction on unseen matches, since spin runs deviance per ball falls from 0.1479 with bowlers to 0.1398 with batters. Those penalties were set by hand, so they were then chosen by match-grouped cross-validation on unseen matches. Weaker penalties predict better, and the held-out deviance for runs falls from 0.1398 at the hand-set strength to 0.1364 at a multiplier of 0.125 (0.25 for wickets), then rises again below it. At the chosen penalties the Australian spin factor for 2015 to 2019 is 1.42, with a 90% interval of 1.34 to 1.65 from 30 resamples of whole matches. The hand-set range of 1.21 to 1.36 sat below that for this reason. Putting the cross-validated factors into the model as a variant leaves Root first, moves Lyon from fifth to fourth and Ashwin from seventh to sixth, and scores a held-out AUC of 0.9844 against 0.9844 with log-loss 0.1601 against 0.1605. The match-outcome check cannot tell the two apart, so the variant is not adopted. The batters faced do not explain the figure, and if anything the model understates how hard Australia is for spin.</p>
+
+    <h3 id="saved-tests">Would crediting a saved Test change the order?</h3>
+
+    <p>The model credits a rearguard through its runs and the weight of the moment, and not separately for the defeat it avoided. To size what that leaves out, each ball's expected result for the batting side (win 1, draw 0.5, loss 0) was taken from out-of-fold predictions. A saved Test is a drawn Test in which the side batting in the fourth innings fell below 0.25 at some ball. There are 52 of them among 168 drawn Tests.</p>
+
+    <p>Crediting each batter with the change in his side's expected result over those innings, and debiting him for each wicket that falls, pays out 4.98 wins in total across 228 batters. The largest credit is 0.62 wins (Holder). The largest among the career top ten is 0.22 (Ashwin), and the top ten's credits sum to &minus;0.20 wins, against a median gap of 0.40 wins between adjacent places. These credits are an upper bound, since the model already pays for the same runs through RAR and leverage and nothing is netted off. A saved-Test credit would move batters outside the top ten, with Younis Khan and Sangakkara gaining most among the top 20, and leave the top of the table where it is. It is not added to the model.</p>
 
     <h3 id="player-level">Do the ratings predict the future?</h3>
 
@@ -1280,7 +1287,13 @@
 
     <p>A player's rating carries over, but loosely. Across 1,683 player-years with at least three Tests in each of two consecutive years, the rank correlation between one year's WAR per Test and the next year's is 0.19. Across 147 players with at least 40 Tests, first-half and second-half WAR per Test have a rank correlation of 0.49. A single year is mostly noise and a career is mostly signal, which is why the leaderboard is built on careers.</p>
 
-    <p>The ratings use only earlier matches, but the model's factors (conditions, opposition and batting positions) were fitted on the whole period. So this is out of sample for the player ratings and not for the full pipeline. Refitting every factor for each test year would close that gap and is not done here.</p>
+    <p>The ratings use only earlier matches, but the model's factors (conditions, opposition, batting positions, the wicket price and leverage) were fitted on the whole period. So this check is out of sample for the player ratings and not for the full pipeline.</p>
+
+    <p><strong>Refitting every factor on the past only.</strong> To close that gap the pipeline was rerun once for each cut-off year from 2012 to 2026, on Tests played before 1 January of that year, 15 runs in all. Each year's Tests from 2016 are predicted from ratings made by the run that had seen nothing of that year. The regression is fitted on the earlier years and every rival gets the same as-of-1-January information, so the ratings are up to a year old for all of them.</p>
+
+    <p>On 369 decisive Tests from 2016 to 2026, WAR with factors fitted on the past only has an AUC of 0.729 against 0.723 for the full-period factors, 0.677 for raw averages, 0.662 for experience and 0.613 for home advantage alone. It beats the raw averages on AUC in 100% of 200 resamples and on log-loss in 82%. It beats the full-period version on AUC in 97% of resamples and on log-loss in 56%, so fitting the factors on the full period gave no visible advantage, and the earlier check was not flattering the model.</p>
+
+
 
     <p class="section-mark" id="appendix-ledger">Appendix &middot; the version ledger</p>
     <p class="table-hint">AUC wasn't tracked as a formal held-out metric until v9; earlier versions were checked against known cricket history instead, not a validation score. Higher AUC is better; the shipped baseline was 0.985 at v10 and is 0.981 now.</p>
