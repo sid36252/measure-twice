@@ -541,6 +541,29 @@
 
     <p><strong>What did not change it.</strong> Fifteen ideas were tested and rejected, among them pricing a wicket by the batter's quality, a joint hierarchical fit and an explicit win/draw/loss model. Each failed a held-out check or moved no ranking. They are logged so nobody repeats them. The Australian spin factor is still the least settled number. The <a href="#after-v18">section after v18</a> shows how far it moves under every fix tried, and <a href="#robustness">the robustness table</a> and <a href="#uncertainty">the bootstrap</a> show how much the top of the table depends on it.</p>
 
+    <h3 id="validation-glance">Validation at a glance</h3>
+
+    <p>Each row is a test the model has to pass, with the section that explains it in the first column.</p>
+
+    <div class="table-wrap">
+      <table class="glance">
+        <caption>What was tested and what came back</caption>
+        <thead>
+          <tr><th>Test</th><th>What it asks</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name"><a href="#v10">Held-out match outcomes</a></td><td>Does a team's summed RAR predict who wins Tests the fit never saw, over 200 random 70/30 splits of decisive Tests?</td><td>AUC 0.9844, log-loss 0.1601</td></tr>
+          <tr><td class="name"><a href="#v15">Every change against it</a></td><td>Does each change beat the previous model on those splits, and is the wicket price and leverage predicted by models that never saw the match?</td><td>Changes kept only on held-out evidence or a stated principle; the rest are logged as rejected</td></tr>
+          <tr><td class="name"><a href="#player-level">Players rated before the match</a></td><td>Do ratings built only from a player's earlier matches predict his team's next results?</td><td>AUC 0.748 against 0.702 for unadjusted averages and 0.657 for experience</td></tr>
+          <tr><td class="name"><a href="#player-level">Every factor fitted on the past only</a></td><td>The whole pipeline rerun for each cut-off year, 15 runs, then the same prediction.</td><td>AUC 0.734 against 0.677 for averages</td></tr>
+          <tr><td class="name"><a href="#v19">Adopting v19</a></td><td>A rule fixed before the test: beat v18 in that walk-forward check on both AUC and log-loss in at least 75% of resamples.</td><td>Beat it on AUC in 97.5% and on log-loss in 94.0%</td></tr>
+          <tr><td class="name"><a href="#uncertainty">How close the top is</a></td><td>Resampling 1,091 whole Tests 200 times, with the country factor also varied.</td><td>Root first in 45% of resamples and in the top three in 82%; no adjacent pair separated at 90%</td></tr>
+          <tr><td class="name"><a href="#robustness">Other settings</a></td><td>7 alternative settings, one change each.</td><td>Root first in 6 of 8 rows and never below second</td></tr>
+          <tr><td class="name"><a href="#appendix-ledger">Rebuilding it</a></td><td>Everything rebuilt from the raw Cricsheet JSON in a clean copy and compared with the live results.</td><td>12 result files identical to within 1e-9, and 19 of 19 reruns of the later analyses come back identical</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="chart-block">
       <p class="chart-title">How the model fits together</p>
       <div class="chart-svg-wrap flow-wide">
