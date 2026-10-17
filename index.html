@@ -1273,7 +1273,7 @@
 
         <h3 id="uncertainty">How certain is the top of the table?</h3>
 
-    <p>Every figure so far is a point estimate. To see how much the order depends on which Tests are in the sample, I drew 200 resamples of whole Tests, 1,091 in each including the 201 scorecard Tests, and rebuilt every player's career WAR from the matches drawn. The factors and prices are held fixed at their fitted values, so this measures the sampling variance of the match set and not the parameter variance of refitting the model each time. Refitting the whole pipeline 200 times would take hours, so these ranges understate the full uncertainty. Drawing whole matches also redraws how many Tests a player appears in, so each range includes some noise from volume. A second version also moves the country factors a random distance toward the pooled factors of v18 in each draw, a one-direction stand-in for refitting them.</p>
+    <p>Every figure so far is a point estimate. To see how much the order depends on which Tests are in the sample, I drew 200 resamples of whole Tests, 1,091 in each including the 201 scorecard Tests, and rebuilt every player's career WAR from the matches drawn. The factors and prices are held fixed at their fitted values, so this measures the sampling variance of the match set and not the parameter variance of refitting the model each time. Refitting the whole pipeline 200 times would take days, so these ranges understate the full uncertainty, and a smaller full refit follows the table. Drawing whole matches also redraws how many Tests a player appears in, so each range includes some noise from volume. A second version also moves the country factors a random distance toward the pooled factors of v18 in each draw, a one-direction stand-in for refitting them.</p>
 
     <div class="table-wrap">
       <table class="bootstrap">
@@ -1321,6 +1321,29 @@
     <!--/rankdist-->
 
     <p>Root is first in 45% of resamples and in the top three in 82%. No adjacent pair is separated at the 90% level. The most secure order is Anderson over Broad, ahead in 76% of resamples. Root is first in 50% of those draws, against 45% with the factor fixed, and Lyon's 90% rank range runs from 1 to 14 with the factor fixed and from 1 to 16 with it varied. The top ten is best read as one tier, with Root first more often than anyone else, and not as ten separate places. The order inside it is the model's best estimate, and a different set of Tests could reshuffle it.</p>
+
+    <p>The draws above hold the fitted parts of the model fixed, so a last check reran the whole pipeline from the raw files on 30 resamples of the 890 ball-by-ball Tests, refitting the country factors, the wicket price, the leverage index and the replacement baselines each time. The 201 scorecard Tests are rescored under each draw&rsquo;s factors but not redrawn. Root is first in 37% of the draws and in the top three in 83%, against 45% and 82% with the fitted parts held fixed. Anderson is in the top three in 57%, against 74%, and Lyon's 90% rank range runs from 1 to 14. The ranges widen most further down, and Jadeja's runs from 2 to 52. Each draw&rsquo;s top ten shares a median of 8 of its ten players with the live table. Thirty draws is few for a 90% interval, so treat the ranges as rough. The picture matches the fixed-factor draws. Root is the likeliest first, and the order behind him is open.</p>
+
+    <div class="table-wrap">
+      <table class="refit">
+        <caption>Career WAR over 30 full refits on resampled Tests</caption>
+        <thead>
+          <tr><th>Player</th><th class="num">90% interval</th><th class="num">Rank range</th><th class="num">First in</th><th class="num">Top three in</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">1. Root</td><td class="num">13.3 to 20.8</td><td class="num">1 to 5</td><td class="num">37%</td><td class="num">83%</td></tr>
+          <tr><td class="name">2. Anderson</td><td class="num">11.3 to 19.4</td><td class="num">1 to 8</td><td class="num">30%</td><td class="num">57%</td></tr>
+          <tr><td class="name">3. Broad</td><td class="num">9.6 to 17.1</td><td class="num">1 to 16</td><td class="num">7%</td><td class="num">33%</td></tr>
+          <tr><td class="name">4. Lyon</td><td class="num">11.0 to 17.9</td><td class="num">1 to 14</td><td class="num">10%</td><td class="num">37%</td></tr>
+          <tr><td class="name">5. Smith</td><td class="num">9.4 to 16.2</td><td class="num">2 to 19</td><td class="num">0%</td><td class="num">13%</td></tr>
+          <tr><td class="name">6. Ashwin</td><td class="num">9.1 to 16.9</td><td class="num">1 to 20</td><td class="num">13%</td><td class="num">27%</td></tr>
+          <tr><td class="name">7. Cook</td><td class="num">9.2 to 14.6</td><td class="num">2 to 16</td><td class="num">0%</td><td class="num">10%</td></tr>
+          <tr><td class="name">8. Jadeja</td><td class="num">6.1 to 16.0</td><td class="num">2 to 52</td><td class="num">3%</td><td class="num">10%</td></tr>
+          <tr><td class="name">9. Cummins</td><td class="num">7.2 to 13.5</td><td class="num">7 to 34</td><td class="num">0%</td><td class="num">0%</td></tr>
+          <tr><td class="name">10. MA Starc</td><td class="num">6.6 to 14.9</td><td class="num">4 to 44</td><td class="num">0%</td><td class="num">0%</td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <p>The cross-fitted wicket price depends on a random split of matches into five folds, so a further check reran the whole pipeline with three other fold seeds. The top two are unchanged in 3 of 3 seeds and Lyon stays within one place of fourth in 3 of 3. The top five is the same five players in 1 of 3, with Smith and Ashwin swapping fifth and sixth in the others. The largest move among the live top ten runs from 0.36 to 0.62 WAR across the seeds. The rule fixed beforehand allowed no move of 0.30 or more and no change to the top five, so it passes for 0 of 3 seeds. The fold seed is worth about half a WAR at the top of the table, in line with what the bootstrap says about the order below Anderson.</p>
 
