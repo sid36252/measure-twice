@@ -527,7 +527,7 @@
   </header>
 
   <div class="tldr">
-    <p>New here? Start with <a href="https://sid36252.github.io/root-cause/"><strong>Root Cause</strong></a>. It has the leaderboard, the head-to-head debates, and what the model found. Come back here for how it was built.</p>
+    <p>New here? Start with <a href="https://sid36252.github.io/root-cause/"><strong>Root Cause</strong></a>. It has the leaderboard, the head-to-head debates, and what the model found. Come back here for how it was built. A <a href="summary.pdf">one-page PDF summary</a> is also available.</p>
   </div>
 
   <div class="tldr">
@@ -561,25 +561,39 @@
 
     <p><strong>What did not change it.</strong> Fifteen ideas were tested and rejected, among them pricing a wicket by the batter's quality, a joint hierarchical fit and an explicit win/draw/loss model. Each failed a held-out check or moved no ranking. They are written up in the <a href="#appendix-rejected">appendix</a> so nobody repeats them. The Australian spin factor is still the least settled number. The <a href="#after-v18">section after v18</a> shows how far it moves under every fix tried, and <a href="#robustness">the robustness table</a> and <a href="#uncertainty">the bootstrap</a> show how much the top of the table depends on it.</p>
 
+    <h3 id="worked-example">One Test, traced through the model</h3>
+
+    <p>This is Bumrah's bowling in the Brisbane Test against Australia in 2024, the example Root Cause uses, with each step in the order the model takes it.</p>
+
+    <ul class="plain">
+      <li><strong>The raw line.</strong> He bowled 204 balls, conceding 94 runs and taking 9 wickets.</li>
+      <li><strong>The replacement.</strong> Over the same 204 balls, against the same batting line-up on that pitch, a replacement bowler would be expected to concede about 153 runs and take about 3.2 wickets, so he saved 59 runs.</li>
+      <li><strong>The wickets.</strong> He took 5.84 more wickets than the replacement would have. A wicket in that match is worth 27.5 runs once the era's price is adjusted for how the pitch played, so the extra wickets add 161 runs.</li>
+      <li><strong>Runs above replacement.</strong> Together that is 220 runs above replacement, or 0.42 of a win at about 520 runs per win in that era.</li>
+      <li><strong>The stakes.</strong> The Test was tighter than average, with a leverage of 1.38, so the 220 runs become about 305 and the 0.42 of a win becomes 0.59.</li>
+    </ul>
+
+    <p>The replacement level is <a href="#v1">v1</a>. The conditions behind the second step are <a href="#v8">v8</a> and <a href="#v19">v19</a>, the wicket price is <a href="#v10">v10</a> and <a href="#v15">v15</a>, and the leverage is <a href="#v3">v3</a> and <a href="#v17">v17</a>.</p>
+
     <h3 id="validation-glance">Validation at a glance</h3>
 
-    <p>Each row is a test the model has to pass, with the section that explains it in the first column.</p>
+    <p>Each row is a test the model has to pass. The first column links to the section that explains it, and hovering over a name shows the question it asks.</p>
 
     <div class="table-wrap">
       <table class="glance">
         <caption>What was tested and what came back</caption>
         <thead>
-          <tr><th>Test</th><th>What it asks</th><th>Result</th></tr>
+          <tr><th>Test</th><th>Result</th></tr>
         </thead>
         <tbody>
-          <tr><td class="name"><a href="#v10">Held-out match outcomes</a></td><td>Does a team's summed RAR predict who wins Tests the fit never saw, over 200 random 70/30 splits of decisive Tests?</td><td>AUC 0.9844, log-loss 0.1601</td></tr>
-          <tr><td class="name"><a href="#v15">Every change against it</a></td><td>Does each change beat the previous model on those splits, and is the wicket price and leverage predicted by models that never saw the match?</td><td>Changes kept only on held-out evidence or a stated principle; the rest are logged as rejected</td></tr>
-          <tr><td class="name"><a href="#player-level">Players rated before the match</a></td><td>Do ratings built only from a player's earlier matches predict his team's next results?</td><td>AUC 0.748 against 0.702 for unadjusted averages and 0.657 for experience</td></tr>
-          <tr><td class="name"><a href="#player-level">Every factor fitted on the past only</a></td><td>The whole pipeline rerun for each cut-off year, 15 runs, then the same prediction.</td><td>AUC 0.734 against 0.677 for averages</td></tr>
-          <tr><td class="name"><a href="#v19">Adopting v19</a></td><td>A rule fixed before the test: beat v18 in that walk-forward check on both AUC and log-loss in at least 75% of resamples.</td><td>Beat it on AUC in 97.5% and on log-loss in 94.0%</td></tr>
-          <tr><td class="name"><a href="#uncertainty">How close the top is</a></td><td>Resampling 1,091 whole Tests 200 times, with the country factor also varied.</td><td>Root first in 45% of resamples and in the top three in 82%; no adjacent pair separated at 90%</td></tr>
-          <tr><td class="name"><a href="#robustness">Other settings</a></td><td>7 alternative settings, one change each.</td><td>Root first in 6 of 8 rows and never below second</td></tr>
-          <tr><td class="name"><a href="#appendix-ledger">Rebuilding it</a></td><td>Everything rebuilt from the raw Cricsheet JSON in a clean copy and compared with the live results.</td><td>12 result files identical to within 1e-9, and 19 of 19 reruns of the later analyses come back identical</td></tr>
+          <tr><td class="name"><a href="#v10" title="Does a team&#x27;s summed RAR predict who wins Tests the fit never saw, over 200 random 70/30 splits of decisive Tests?">Held-out match outcomes</a></td><td>AUC 0.9844, log-loss 0.1601</td></tr>
+          <tr><td class="name"><a href="#v15" title="Does each change beat the previous model on those splits, and is the wicket price and leverage predicted by models that never saw the match?">Every change against it</a></td><td>Changes kept only on held-out evidence or a stated principle; the rest are logged as rejected</td></tr>
+          <tr><td class="name"><a href="#player-level" title="Do ratings built only from a player&#x27;s earlier matches predict his team&#x27;s next results?">Players rated before the match</a></td><td>AUC 0.748 against 0.702 for unadjusted averages and 0.657 for experience</td></tr>
+          <tr><td class="name"><a href="#player-level" title="The whole pipeline rerun for each cut-off year, 15 runs, then the same prediction.">Every factor fitted on the past only</a></td><td>AUC 0.734 against 0.677 for averages</td></tr>
+          <tr><td class="name"><a href="#v19" title="A rule fixed before the test: beat v18 in that walk-forward check on both AUC and log-loss in at least 75% of resamples.">Adopting v19</a></td><td>Beat it on AUC in 97.5% and on log-loss in 94.0%</td></tr>
+          <tr><td class="name"><a href="#uncertainty" title="Resampling the Tests 100 times and refitting the whole model on each draw.">How close the top is</a></td><td>Root first in 39% and in the top three in 72% of 100 full refits</td></tr>
+          <tr><td class="name"><a href="#robustness" title="7 alternative settings, one change each.">Other settings</a></td><td>Root first in 6 of 8 rows and never below second</td></tr>
+          <tr><td class="name"><a href="#appendix-ledger" title="Everything rebuilt from the raw Cricsheet JSON in a clean copy and compared with the live results.">Rebuilding it</a></td><td>12 result files identical to within 1e-9, and 19 of 19 reruns of the later analyses come back identical</td></tr>
         </tbody>
       </table>
     </div>
@@ -780,7 +794,7 @@
       <p class="chart-note">Ten versions in build order, left to right. Two threads don't run straight through the trunk. v2's individual-ranking model was shelved, but its event-level pricing came back to catch the v10 bug five versions later. v5's calibration patch papered over that same bug for four versions before v10 found the cause and it was dropped. Everything after v10 branches off the shipped model, baseline AUC 0.985 at the time (0.981 for the current model), either into the twelve refinements that were tried and rejected, or the one question still open. Nine later versions, described at the end, all came after publication. v11 corrected the replacement level for seasons before 2012, v12 built a proper replacement baseline and leaderboard for the 2001&ndash;2008 coverage gap itself, v13 and v14 gave that layer leverage and batting position, v15 priced a wicket from every match instead of one fifth of them, v16 rated opponents on where their runs were made, v17 made leverage out-of-fold and measured country conditions against the same period, v18 removed a double count in the conditions factors, and v19 fitted the country factors with the bowler and the batters faced held fixed.</p>
     </div>
 
-    <h3>v1 &mdash; the foundation, and where "replacement level" comes from</h3>
+    <h3 id="v1">v1 &mdash; the foundation, and where "replacement level" comes from</h3>
 
     <p>The core unit is Runs Above Replacement (RAR), actual output minus what a replacement-level player would have produced in the same conditions. "Replacement level" means the batting and bowling of players with 10 Tests or fewer in their whole career, the players cycling through the fringe of a squad, not the league average. Every performance is also adjusted for the specific bowlers or batters faced (weighted by a rolling, era-adjusted rating of their own quality) and converted to wins using a runs-per-win rate fitted separately for each five-year era, since the draw-rate shift means a given run advantage buys a different amount of winning probability in 2003 than it does in 2023.</p>
 
@@ -795,7 +809,7 @@
       <p>73% of all deliveries are dot balls. Nothing happens, so their true value is essentially zero. But the model's predictions aren't perfectly smooth, so each dot ball carries a small amount of noise, a standard deviation over 100&times; the size of its true average effect. A frontline bowler faces 20,000&ndash;40,000 of these across a career, and that accumulated noise swamped the real signal from actual wickets and boundaries, where the model was completely correct. A wicket cost the batting side about 4.9 win-probability points on average, and a four gained about 0.65, exactly the right sign and the right order of magnitude. The model wasn't wrong about cricket. It couldn't be summed ball by ball without the noise drowning the signal, and it couldn't be turned into a leaderboard because teams use their best bowler when a wicket is already expected, which makes the wickets he takes look less surprising. Both problems, revisited for v10, are why this model was never trusted for individual rankings. Its event-level averages, summed over the whole dataset and not attributed to any one player, did prove to be the tool needed to catch the wicket-pricing bug five versions later.</p>
     </div>
 
-    <h3>v3 &mdash; using it for stakes, not value</h3>
+    <h3 id="v3">v3 &mdash; using it for stakes, not value</h3>
 
     <p>Rather than discard the win-probability model, I narrowed its job. It no longer prices events, and instead measures <em>leverage</em>, how much a wicket would swing the win probability right now, regardless of whether one falls. That's a property of the match state, and match states are far smoother than individual ball outcomes. Multiply v1's already-solid RAR by that leverage, and a century scored under real pressure starts counting for more than the same century in a match already won.</p>
 
@@ -885,7 +899,7 @@
 
     <p>Four buckets beat three, so the open question was whether eleven would beat four. Built it properly, exact position 1 through 11 for every innings, each with its own era-specific replacement bar. The position factors came out exactly as cricket would predict, close to neutral at the top of the order, peaking at #4, and falling steadily to #11. #4 isn't the hardest place to bat, it's the easiest, since it's where the best batter in most sides gets to build an innings against an older ball, with a platform already in place. That's part of why it carries the highest bar, though not the whole reason. The factor is built from what everyone who has ever batted at #4 scored there, and teams don't send a random player to #4, they send their best one. So some of that reading is truly easier conditions, and some of it is just that the sample at #4 is disproportionately good players. Either way, the effect on the bar is the same. A good batter is expected to cash in at #4, so the model correctly demands more production before crediting anyone there with value above replacement. This version, eleven individual positions, is what the batting side of the model uses.</p>
 
-    <h3>v8 &mdash; the bowling pitch factor was answering two questions with one number</h3>
+    <h3 id="v8">v8 &mdash; the bowling pitch factor was answering two questions with one number</h3>
 
     <p>The clearest single example was Danish Kaneria's 5 for 205 against Sri Lanka at Karachi in 2009. On inspection, the value the model was assigning it looked wrong, and it was, which is what sent me looking at truncated and rain-affected matches as a class, rather than treating it as a one-off. Pulling every drawn Test where fewer than 20 wickets fell across the whole match, then comparing the model's implied pitch difficulty against what every bowler who played that match had conceded, showed the same pattern over and over. The model's implied replacement economy was routinely two to three times the real scoring rate of the match. Not a one-off rounding gap, but a systematic mismatch across dozens of matches. That's a sign the number means something other than what it's supposed to.</p>
 
@@ -909,7 +923,7 @@
 
     <p>Two more checks came out of the same push, both worth naming even though neither changed the model. Batting's equivalent pitch factor was already using the truncation-adaptive shrinkage built for v8, since it shares the same underlying calculation and doesn't have bowling's specific ratio-conflation problem, so nothing to fix there. And a two-way check on batting position (does netting player quality out of the #4 premium change anything) found a striking-looking result in-sample. Almost the entire #4 premium collapsed once you controlled for who bats there. It then failed a proper held-out test. The old, selection-contaminated position factor predicts held-out performance slightly <em>better</em> than the "corrected" one, because this model is built around replacement level, and teams essentially never put a true replacement player at #4. The pooled reading, contamination and all, is the better proxy for that slot. Tested properly, and correctly left alone.</p>
 
-    <h3>v10 &mdash; a wicket wasn't worth what the model thought it was</h3>
+    <h3 id="v10">v10 &mdash; a wicket wasn't worth what the model thought it was</h3>
 
     <p>This was supposed to be a smaller check. There'd been a query about whether the model was simply bowler-weighted by nature, since more players bat in an innings than bowl at all, so a fixed pool of value naturally concentrates among fewer bowlers. Checking that specific mechanism directly, it held up completely. Batters and bowlers split an equal-sized pool of value under the old calibration (by construction), and the higher average bowling total per player tracked almost exactly with the smaller number of players who bowl (headcount ratio 1.375, mean-value ratio 1.402). Correctly implemented, not a bug. That should have been the end of it.</p>
 
@@ -1171,7 +1185,7 @@
 
     <p>These numbers are far lower than the 0.98 earlier in this piece, and the two are not comparable. The earlier checks score a team's rating in a match against that match's result. This one rates the players before the match and asks who wins, which is much harder and is the test a rating has to pass to be worth anything. It also shows how much of a Test's result no rating can see.</p>
 
-    <p>A player's rating carries over, but loosely. Across 1,683 player-years with at least three Tests in each of two consecutive years, the rank correlation between one year's WAR per Test and the next year's is 0.21. Across 147 players with at least 40 Tests, first-half and second-half WAR per Test have a rank correlation of 0.52. A single year is mostly noise and a career is mostly signal, which is why the leaderboard is built on careers.</p>
+    <p>A player's rating carries over, but loosely. Across 1,683 player-years with at least three Tests in each of two consecutive years, the rank correlation between one year's WAR per Test and the next year's is 0.21. Across 147 players with at least 40 Tests, first-half and second-half WAR per Test have a rank correlation of 0.52. A single year is mostly noise and a career is mostly signal, which is why the leaderboard is built on careers. Splitting each player's Tests at random into two sets, a rating is about half signal after 17 Tests and about 70% signal after 41, an estimate that assumes players are alike.</p>
 
     <p>The ratings use only earlier matches, but the model's factors (conditions, opposition, batting positions, the wicket price and leverage) were fitted on the whole period. So this check is out of sample for the player ratings and not for the full pipeline.</p>
 
